@@ -3,6 +3,13 @@ package UnitSqueezer
 import (
 	"context"
 	"path/filepath"
+	"strconv"
+	"strings"
+
+	"github.com/opensibyl/UnitSqueezor/indexer"
+	"github.com/opensibyl/UnitSqueezor/log"
+	"github.com/opensibyl/UnitSqueezor/object"
+	"golang.org/x/exp/slices"
 )
 
 /*
@@ -31,7 +38,7 @@ func MainFlow() {
 	sharedContext := context.Background()
 
 	// init config
-	conf := DefaultConfig()
+	conf := object.DefaultConfig()
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
@@ -41,9 +48,37 @@ func MainFlow() {
 	// todo: start sibyl2 server
 
 	// 1. upload and tag
-	indexer, err := NewIndexer(&conf)
-	err = indexer.UploadSrc(sharedContext)
+	curIndexer, err := indexer.NewIndexer(&conf)
+	err = curIndexer.UploadSrc(sharedContext)
 	PanicIfErr(err)
-	err = indexer.TagCases(apiClient, sharedContext)
+	err = curIndexer.TagCases(apiClient, sharedContext)
 	PanicIfErr(err)
+
+	// 2. calc
+	extractor, err := NewDiffExtractor(&conf)
+	PanicIfErr(err)
+	diffMap, err := extractor.ExtractDiffMap()
+	PanicIfErr(err)
+	log.Log.Infof("diff map: %v", diffMap)
+
+	influenceTag := conf.GetInfluenceTag()
+	for eachFile, eachLineList := range diffMap {
+		lstring := make([]string, 0, len(eachLineList))
+		for _, eachLine := range eachLineList {
+			lstring = append(lstring, strconv.Itoa(eachLine))
+		}
+		functionWithSignatures, _, err := apiClient.BasicQueryApi.
+			ApiV1FuncGet(sharedContext).
+			Repo(conf.RepoInfo.Name).
+			Rev(conf.RepoInfo.CommitId).
+			File(eachFile).
+			Lines(strings.Join(lstring, ",")).
+			Execute()
+		PanicIfErr(err)
+		for _, each := range functionWithSignatures {
+			if slices.Contains(each.Tags, influenceTag) {
+				log.Log.Infof("function reachable: %v", each.GetSignature())
+			}
+		}
+	}
 }

@@ -1,15 +1,16 @@
-package UnitSqueezer
+package indexer
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/opensibyl/UnitSqueezor/log"
+	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/cmd/sibyl/subs/upload"
 )
 
 type GoIndexer struct {
-	config *SharedConfig
+	config *object.SharedConfig
 }
 
 func (i *GoIndexer) UploadSrc(_ context.Context) error {
@@ -35,7 +36,7 @@ func (i *GoIndexer) TagCases(apiClient *openapi.APIClient, ctx context.Context) 
 		Execute()
 
 	// case is case, will not change
-	tagCase := TagCase
+	tagCase := object.TagCase
 	// tag cases
 	for _, each := range functionWithPaths {
 		// all the errors from tag will be ignored
@@ -55,7 +56,7 @@ func (i *GoIndexer) TagCases(apiClient *openapi.APIClient, ctx context.Context) 
 
 func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature string, ctx context.Context) error {
 	// if batch id changed, will recalc
-	tagInfluence := fmt.Sprintf("%s%d", TagPrefixInfluence, i.config.BatchId)
+	tagInfluence := i.config.GetInfluenceTag()
 
 	repo := i.config.RepoInfo.Name
 	rev := i.config.RepoInfo.CommitId
@@ -67,6 +68,7 @@ func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature str
 		Signature: &signature,
 		Tag:       &tagInfluence,
 	}).Execute()
+	log.Log.Infof("tag influence: %v", signature)
 
 	functionContext, _, _ := apiClient.SignatureQueryApi.
 		ApiV1SignatureFuncctxGet(ctx).

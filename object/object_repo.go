@@ -1,4 +1,4 @@
-package UnitSqueezer
+package object
 
 import (
 	"fmt"

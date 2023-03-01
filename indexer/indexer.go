@@ -1,8 +1,9 @@
-package UnitSqueezer
+package indexer
 
 import (
 	"context"
 
+	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 )
 
@@ -13,8 +14,8 @@ type Indexer interface {
 	TagCaseInfluence(apiClient *openapi.APIClient, signature string, ctx context.Context) error
 }
 
-func NewIndexer(config *SharedConfig) (*GoIndexer, error) {
-	repoInfo, err := GetRepoInfoFromDir(config.SrcDir)
+func NewIndexer(config *object.SharedConfig) (Indexer, error) {
+	repoInfo, err := object.GetRepoInfoFromDir(config.SrcDir)
 	config.RepoInfo = repoInfo
 	if err != nil {
 		return nil, err

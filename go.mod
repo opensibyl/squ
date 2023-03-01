@@ -7,12 +7,14 @@ require (
 	github.com/opensibyl/sibyl-go-client v0.0.0-20230220171743-447d73d05385
 	github.com/opensibyl/sibyl2 v0.15.2
 	go.uber.org/zap v1.24.0
+	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 )
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
+	github.com/bluekeyes/go-gitdiff v0.7.0 // indirect
 	github.com/cloudflare/circl v1.3.2 // indirect
 	github.com/dominikbraun/graph v0.15.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -49,7 +51,6 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
