@@ -3,7 +3,6 @@ package indexer
 import (
 	"context"
 
-	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/cmd/sibyl/subs/upload"
@@ -38,25 +37,26 @@ func (i *GoIndexer) TagCases(apiClient *openapi.APIClient, ctx context.Context) 
 	// case is case, will not change
 	tagCase := object.TagCase
 	// tag cases
-	for _, each := range functionWithPaths {
+	for _, eachCaseMethod := range functionWithPaths {
 		// all the errors from tag will be ignored
 		_, _ = apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
 			RepoId:    &repo,
 			RevHash:   &rev,
-			Signature: each.Signature,
+			Signature: eachCaseMethod.Signature,
 			Tag:       &tagCase,
 		}).Execute()
 
 		// tag all, and all their calls
-		_ = i.TagCaseInfluence(apiClient, each.GetSignature(), ctx)
+		_ = i.TagCaseInfluence(apiClient, eachCaseMethod.GetSignature(), eachCaseMethod.GetSignature(), ctx)
 	}
 
 	return nil
 }
 
-func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature string, ctx context.Context) error {
+func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, caseSignature string, signature string, ctx context.Context) error {
 	// if batch id changed, will recalc
-	tagInfluence := i.config.GetInfluenceTag()
+	tagReach := i.config.GetReachTag()
+	tagReachBy := object.TagPrefixReachBy + caseSignature
 
 	repo := i.config.RepoInfo.Name
 	rev := i.config.RepoInfo.CommitId
@@ -66,9 +66,14 @@ func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature str
 		RepoId:    &repo,
 		RevHash:   &rev,
 		Signature: &signature,
-		Tag:       &tagInfluence,
+		Tag:       &tagReach,
 	}).Execute()
-	log.Log.Infof("tag influence: %v", signature)
+	_, _ = apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
+		RepoId:    &repo,
+		RevHash:   &rev,
+		Signature: &signature,
+		Tag:       &tagReachBy,
+	}).Execute()
 
 	functionContext, _, _ := apiClient.SignatureQueryApi.
 		ApiV1SignatureFuncctxGet(ctx).
@@ -77,7 +82,7 @@ func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature str
 		Signature(signature).
 		Execute()
 	for _, each := range functionContext.Calls {
-		_ = i.TagCaseInfluence(apiClient, each, ctx)
+		_ = i.TagCaseInfluence(apiClient, caseSignature, each, ctx)
 	}
 	return nil
 }

@@ -36,6 +36,6 @@ func (conf *SharedConfig) NewSibylClient() (*openapi.APIClient, error) {
 	return openapi.NewAPIClient(configuration), nil
 }
 
-func (conf *SharedConfig) GetInfluenceTag() string {
-	return fmt.Sprintf("%s%d", TagPrefixInfluence, conf.BatchId)
+func (conf *SharedConfig) GetReachTag() string {
+	return fmt.Sprintf("%s%d", TagPrefixReach, conf.BatchId)
 }
