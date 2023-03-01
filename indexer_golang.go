@@ -2,7 +2,7 @@ package UnitSqueezer
 
 import (
 	"context"
-	"net/url"
+	"fmt"
 
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/cmd/sibyl/subs/upload"
@@ -22,28 +22,60 @@ func (i *GoIndexer) UploadSrc(_ context.Context) error {
 	return nil
 }
 
-func (i *GoIndexer) TagCases(ctx context.Context) error {
-	parsed, err := url.Parse(i.config.SibylUrl)
-	if err != nil {
-		return err
-	}
-
-	configuration := openapi.NewConfiguration()
-	configuration.Scheme = parsed.Scheme
-	configuration.Host = parsed.Host
-	apiClient := openapi.NewAPIClient(configuration)
+func (i *GoIndexer) TagCases(apiClient *openapi.APIClient, ctx context.Context) error {
+	repo := i.config.RepoInfo.Name
+	rev := i.config.RepoInfo.CommitId
 
 	functionWithPaths, _, _ := apiClient.RegexQueryApi.
-		ApiV1RegexFuncctxGet(ctx).
-		Repo(i.config.RepoInfo.Name).
-		Rev(i.config.RepoInfo.CommitId).
+		ApiV1RegexFuncGet(ctx).
+		Repo(repo).
+		Rev(rev).
 		Field("name").
 		Regex("^Test.*").
 		Execute()
 
+	// case is case, will not change
+	tagCase := TagCase
+	// tag cases
 	for _, each := range functionWithPaths {
-		Log.Infof("f: %v %v\n", *each.Name, each.Calls)
+		// all the errors from tag will be ignored
+		_, _ = apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
+			RepoId:    &repo,
+			RevHash:   &rev,
+			Signature: each.Signature,
+			Tag:       &tagCase,
+		}).Execute()
+
+		// tag all, and all their calls
+		_ = i.TagCaseInfluence(apiClient, each.GetSignature(), ctx)
 	}
-	// tag all, and all their calls
+
+	return nil
+}
+
+func (i *GoIndexer) TagCaseInfluence(apiClient *openapi.APIClient, signature string, ctx context.Context) error {
+	// if batch id changed, will recalc
+	tagInfluence := fmt.Sprintf("%s%d", TagPrefixInfluence, i.config.BatchId)
+
+	repo := i.config.RepoInfo.Name
+	rev := i.config.RepoInfo.CommitId
+
+	// tag itself
+	_, _ = apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
+		RepoId:    &repo,
+		RevHash:   &rev,
+		Signature: &signature,
+		Tag:       &tagInfluence,
+	}).Execute()
+
+	functionContext, _, _ := apiClient.SignatureQueryApi.
+		ApiV1SignatureFuncctxGet(ctx).
+		Repo(repo).
+		Rev(rev).
+		Signature(signature).
+		Execute()
+	for _, each := range functionContext.Calls {
+		_ = i.TagCaseInfluence(apiClient, each, ctx)
+	}
 	return nil
 }

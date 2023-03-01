@@ -2,12 +2,15 @@ package UnitSqueezer
 
 import (
 	"context"
+
+	openapi "github.com/opensibyl/sibyl-go-client"
 )
 
 type Indexer interface {
 	UploadSrc(ctx context.Context) error
 	// TagCases different framework should have different rules
-	TagCases(ctx context.Context) error
+	TagCases(apiClient *openapi.APIClient, ctx context.Context) error
+	TagCaseInfluence(apiClient *openapi.APIClient, signature string, ctx context.Context) error
 }
 
 func NewIndexer(config *SharedConfig) (*GoIndexer, error) {

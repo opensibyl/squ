@@ -21,20 +21,6 @@ execute (can be implemented by different languages
 2. call cmd
 */
 
-type SharedConfig struct {
-	SrcDir   string    `json:"srcDir"`
-	RepoInfo *RepoInfo `json:"repoInfo"`
-	SibylUrl string    `json:"sibylUrl"`
-}
-
-func DefaultConfig() SharedConfig {
-	return SharedConfig{
-		".",
-		nil,
-		"http://127.0.0.1:9876",
-	}
-}
-
 func PanicIfErr(err error) {
 	if err != nil {
 		panic(err)
@@ -42,14 +28,22 @@ func PanicIfErr(err error) {
 }
 
 func MainFlow() {
+	sharedContext := context.Background()
+
+	// init config
 	conf := DefaultConfig()
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
+	apiClient, err := conf.NewSibylClient()
+	PanicIfErr(err)
 
-	sharedContext := context.Background()
+	// todo: start sibyl2 server
 
+	// 1. upload and tag
 	indexer, err := NewIndexer(&conf)
 	err = indexer.UploadSrc(sharedContext)
+	PanicIfErr(err)
+	err = indexer.TagCases(apiClient, sharedContext)
 	PanicIfErr(err)
 }
