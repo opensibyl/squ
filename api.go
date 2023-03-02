@@ -3,14 +3,11 @@ package UnitSqueezer
 import (
 	"context"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/opensibyl/UnitSqueezor/indexer"
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
-	"golang.org/x/exp/slices"
 )
 
 /*
@@ -43,8 +40,6 @@ func MainFlow() {
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
-	apiClient, err := conf.NewSibylClient()
-	PanicIfErr(err)
 
 	// todo: start sibyl2 server
 
@@ -52,56 +47,16 @@ func MainFlow() {
 	curIndexer, err := indexer.NewIndexer(&conf)
 	err = curIndexer.UploadSrc(sharedContext)
 	PanicIfErr(err)
-	err = curIndexer.TagCases(apiClient, sharedContext)
+	err = curIndexer.TagCases(sharedContext)
 	PanicIfErr(err)
 
 	// 2. calc
 	// line level diff
 	extractor, err := NewDiffExtractor(&conf)
 	PanicIfErr(err)
-	diffMap, err := extractor.ExtractDiffMap()
+	diffMap, err := extractor.ExtractDiffMethods(sharedContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff map: %v", diffMap)
-
-	// method level diff, and influence
-	influenceTag := conf.GetReachTag()
-	influencedMethods := make(map[string][]*FunctionWithState)
-	for eachFile, eachLineList := range diffMap {
-		eachLineStrList := make([]string, 0, len(eachLineList))
-		for _, eachLine := range eachLineList {
-			eachLineStrList = append(eachLineStrList, strconv.Itoa(eachLine))
-		}
-		functionWithSignatures, _, err := apiClient.BasicQueryApi.
-			ApiV1FuncGet(sharedContext).
-			Repo(conf.RepoInfo.Name).
-			Rev(conf.RepoInfo.CommitId).
-			File(eachFile).
-			Lines(strings.Join(eachLineStrList, ",")).
-			Execute()
-		PanicIfErr(err)
-
-		for _, eachFunc := range functionWithSignatures {
-			eachFuncWithState := &FunctionWithState{
-				ObjectFunctionWithSignature: &eachFunc,
-				Reachable:                   false,
-				ReachBy:                     make([]string, 0),
-			}
-			influencedMethods[eachFile] = append(influencedMethods[eachFile], eachFuncWithState)
-		}
-	}
-
-	// reachable?
-	for _, methods := range influencedMethods {
-		for _, eachMethod := range methods {
-			if slices.Contains(eachMethod.Tags, influenceTag) {
-				log.Log.Infof("function reachable: %v", eachMethod.GetSignature())
-				eachMethod.Reachable = true
-			} else {
-				log.Log.Infof("function changed but unreachable: %v", eachMethod.GetSignature())
-				eachMethod.Reachable = false
-			}
-		}
-	}
 }
 
 type FunctionWithState struct {

@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/opensibyl/UnitSqueezor/object"
-	openapi "github.com/opensibyl/sibyl-go-client"
 )
 
 type Indexer interface {
 	UploadSrc(ctx context.Context) error
 	// TagCases different framework should have different rules
-	TagCases(apiClient *openapi.APIClient, ctx context.Context) error
-	TagCaseInfluence(apiClient *openapi.APIClient, caseSignature string, signature string, ctx context.Context) error
+	TagCases(ctx context.Context) error
+	TagCaseInfluence(caseSignature string, signature string, ctx context.Context) error
 }
 
 func NewIndexer(config *object.SharedConfig) (Indexer, error) {
@@ -21,7 +20,15 @@ func NewIndexer(config *object.SharedConfig) (Indexer, error) {
 		return nil, err
 	}
 
+	client, _ := config.NewSibylClient()
+	if err != nil {
+		return nil, err
+	}
+
 	return &GoIndexer{
-		config: config,
+		&BaseIndexer{
+			config:    config,
+			apiClient: client,
+		},
 	}, nil
 }
