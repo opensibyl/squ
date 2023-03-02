@@ -57,6 +57,14 @@ func MainFlow() {
 	diffMap, err := extractor.ExtractDiffMethods(sharedContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff map: %v", diffMap)
+
+	// 3. executor
+	executor, err := NewGoExecutor(&conf)
+	PanicIfErr(err)
+	cases, err := executor.GetRelatedCases(sharedContext, diffMap)
+	PanicIfErr(err)
+	err = executor.Execute(cases, sharedContext)
+	PanicIfErr(err)
 }
 
 type FunctionWithState struct {

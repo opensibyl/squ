@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"sync"
 
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
@@ -23,7 +24,7 @@ func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
 	return nil
 }
 
-func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, signature string, ctx context.Context) error {
+func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, taggedSet *sync.Map, signature string, ctx context.Context) error {
 	// if batch id changed, will recalc
 	tagReach := baseIndexer.config.GetReachTag()
 	tagReachBy := object.TagPrefixReachBy + caseSignature
@@ -32,6 +33,13 @@ func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, signature
 	rev := baseIndexer.config.RepoInfo.CommitId
 
 	// tag itself
+	if _, tagged := taggedSet.Load(signature); tagged {
+		// stop
+		return nil
+	} else {
+		taggedSet.Store(signature, nil)
+	}
+
 	_, _ = baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
 		RepoId:    &repo,
 		RevHash:   &rev,
@@ -52,7 +60,7 @@ func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, signature
 		Signature(signature).
 		Execute()
 	for _, each := range functionContext.Calls {
-		_ = baseIndexer.TagCaseInfluence(caseSignature, each, ctx)
+		go baseIndexer.TagCaseInfluence(caseSignature, taggedSet, each, ctx)
 	}
 	return nil
 }
