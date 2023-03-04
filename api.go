@@ -1,14 +1,18 @@
 package UnitSqueezer
 
 import (
+	"bytes"
 	"context"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/opensibyl/UnitSqueezor/extractor"
 	"github.com/opensibyl/UnitSqueezor/indexer"
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	"github.com/opensibyl/UnitSqueezor/runner"
+	server2 "github.com/opensibyl/sibyl2/cmd/sibyl/subs/server"
 )
 
 /*
@@ -41,7 +45,14 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
 
-	// todo: start sibyl2 server
+	// 0. start sibyl2 backend
+	cmd := server2.NewServerCmd()
+	b := bytes.NewBufferString("")
+	cmd.SetOut(b)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	go cmd.ExecuteContext(ctx)
+	defer stop()
+	log.Log.Infof("sibyl2 backend ready")
 
 	// 1. upload and tag
 	curIndexer, err := indexer.NewIndexer(&conf)
@@ -49,6 +60,7 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 	err = curIndexer.TagCases(sharedContext)
 	PanicIfErr(err)
+	log.Log.Infof("indexer ready")
 
 	// 2. calc
 	// line level diff
@@ -56,13 +68,14 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 	diffMap, err := curExtractor.ExtractDiffMethods(sharedContext)
 	PanicIfErr(err)
-	log.Log.Infof("diff map: %v", diffMap)
+	log.Log.Infof("diff calc ready: %v", len(diffMap))
 
 	// 3. executor
 	executor, err := runner.NewGolangRunner(&conf)
 	PanicIfErr(err)
 	cases, err := executor.GetRelatedCases(sharedContext, diffMap)
 	PanicIfErr(err)
+	log.Log.Infof("start running cases: %v", len(cases))
 	err = executor.Run(cases, sharedContext)
 	PanicIfErr(err)
 }
