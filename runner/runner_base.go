@@ -18,10 +18,10 @@ func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, diffFuncMap o
 	for _, eachFuncList := range diffFuncMap {
 		for _, eachFunction := range eachFuncList {
 			if !eachFunction.Reachable {
-				log.Log.Warnf("func %v can not be reached by cases", eachFunction.Name)
+				log.Log.Warnf("func %v can not be reached by cases", eachFunction.GetName())
 			}
 			for _, eachRelatedCase := range eachFunction.ReachBy {
-				log.Log.Infof("func %v reached by %v", eachFunction.Name, eachRelatedCase)
+				log.Log.Infof("func %v reached by %v", eachFunction.GetName(), eachRelatedCase)
 				retMap[eachRelatedCase] = nil
 			}
 		}

@@ -8,9 +8,9 @@ import (
 )
 
 func TestApi(t *testing.T) {
-	// dead loop
-	t.Skip()
-	MainFlow(object.DefaultConfig())
+	conf := object.DefaultConfig()
+	conf.Dry = true
+	MainFlow(conf)
 }
 
 func TestA(t *testing.T) {

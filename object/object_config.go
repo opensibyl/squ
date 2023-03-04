@@ -9,12 +9,14 @@ import (
 )
 
 type SharedConfig struct {
-	SrcDir   string    `json:"srcDir"`
-	RepoInfo *RepoInfo `json:"repoInfo"`
-	SibylUrl string    `json:"sibylUrl"`
-	BatchId  int       `json:"batchId"`
-	Before   string    `json:"before"`
-	After    string    `json:"after"`
+	SrcDir         string    `json:"srcDir"`
+	RepoInfo       *RepoInfo `json:"repoInfo"`
+	SibylUrl       string    `json:"sibylUrl"`
+	BatchId        int       `json:"batchId"`
+	Before         string    `json:"before"`
+	After          string    `json:"after"`
+	DiffFuncOutput string    `json:"diffFuncOutput"`
+	Dry            bool      `json:"dry"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -25,6 +27,8 @@ func DefaultConfig() SharedConfig {
 		int(time.Now().UnixMicro()),
 		"HEAD~1",
 		"HEAD",
+		"",
+		false,
 	}
 }
 

@@ -3,6 +3,8 @@ package UnitSqueezer
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
@@ -21,12 +23,12 @@ index
 2. search and tag all the test methods
 3. calc and tag all the test methods influencing scope
 
-calc
+extract
 1. calc diff between current and previous
 2. find methods influenced by diff
 3. search related cases
 
-execute (can be implemented by different languages
+runner (can be implemented by different languages)
 1. build test commands for different frameworks
 2. call cmd
 */
@@ -69,13 +71,22 @@ func MainFlow(conf object.SharedConfig) {
 	diffMap, err := curExtractor.ExtractDiffMethods(sharedContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff calc ready: %v", len(diffMap))
+	if conf.DiffFuncOutput != "" {
+		diffFuncOutputBytes, err := json.Marshal(diffMap)
+		PanicIfErr(err)
+		err = os.WriteFile(conf.DiffFuncOutput, diffFuncOutputBytes, os.ModePerm)
+		PanicIfErr(err)
+	}
 
-	// 3. executor
-	executor, err := runner.NewGolangRunner(&conf)
+	// 3. runner
+	runner, err := runner.NewGolangRunner(&conf)
 	PanicIfErr(err)
-	cases, err := executor.GetRelatedCases(sharedContext, diffMap)
+	cases, err := runner.GetRelatedCases(sharedContext, diffMap)
 	PanicIfErr(err)
-	log.Log.Infof("start running cases: %v", len(cases))
-	err = executor.Run(cases, sharedContext)
-	PanicIfErr(err)
+
+	if !conf.Dry {
+		log.Log.Infof("start running cases: %v", len(cases))
+		err = runner.Run(cases, sharedContext)
+		PanicIfErr(err)
+	}
 }
