@@ -29,6 +29,7 @@ func NewGolangRunner(conf *object.SharedConfig) (Runner, error) {
 }
 
 func (g *GoRunner) Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error {
+	// go test --run TestABC|TestDEF
 	execCmdList := make([]string, 0, len(cases))
 	for _, each := range cases {
 		execCmdList = append(execCmdList, fmt.Sprintf("^%s$", each.GetName()))

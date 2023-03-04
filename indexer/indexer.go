@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/opensibyl/UnitSqueezor/object"
@@ -14,7 +15,7 @@ type Indexer interface {
 	TagCaseInfluence(caseSignature string, taggedSet *sync.Map, signature string, ctx context.Context) error
 }
 
-func NewIndexer(config *object.SharedConfig) (Indexer, error) {
+func GetIndexer(indexerType object.IndexerType, config *object.SharedConfig) (Indexer, error) {
 	repoInfo, err := object.GetRepoInfoFromDir(config.SrcDir)
 	config.RepoInfo = repoInfo
 	if err != nil {
@@ -26,10 +27,19 @@ func NewIndexer(config *object.SharedConfig) (Indexer, error) {
 		return nil, err
 	}
 
-	return &GoIndexer{
-		&BaseIndexer{
-			config:    config,
-			apiClient: client,
-		},
-	}, nil
+	baseIndexer := &BaseIndexer{
+		config:    config,
+		apiClient: client,
+	}
+	switch indexerType {
+	case object.IndexerGolang:
+		return &GoIndexer{
+			baseIndexer,
+		}, nil
+	case object.IndexerJavaJUnit:
+		return &JavaJunitIndexer{
+			baseIndexer,
+		}, nil
+	}
+	return nil, fmt.Errorf("no indexer named: %v", indexerType)
 }

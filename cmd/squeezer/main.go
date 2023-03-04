@@ -14,7 +14,8 @@ func main() {
 	after := flag.String("after", "HEAD", "after rev")
 	diffOutput := flag.String("diffOutput", "", "diff output")
 	dry := flag.Bool("dry", false, "dry")
-	runnerType := flag.String("runnerType", object.RunnerGo, "runner type")
+	indexerType := flag.String("indexer", object.IndexerGolang, "indexer type")
+	runnerType := flag.String("runner", object.RunnerGolang, "runner type")
 	flag.Parse()
 
 	config := object.DefaultConfig()
@@ -23,6 +24,7 @@ func main() {
 	config.After = *after
 	config.DiffFuncOutput = *diffOutput
 	config.Dry = *dry
+	config.IndexerType = *indexerType
 	config.RunnerType = *runnerType
 
 	UnitSqueezer.MainFlow(config)

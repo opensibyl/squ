@@ -40,13 +40,13 @@ func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, taggedSet
 		taggedSet.Store(signature, nil)
 	}
 
-	_, _ = baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
+	go baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
 		RepoId:    &repo,
 		RevHash:   &rev,
 		Signature: &signature,
 		Tag:       &tagReach,
 	}).Execute()
-	_, _ = baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
+	go baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
 		RepoId:    &repo,
 		RevHash:   &rev,
 		Signature: &signature,

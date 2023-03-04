@@ -2,4 +2,7 @@ package object
 
 type RunnerType = string
 
-const RunnerGo = "GOLANG"
+const (
+	RunnerGolang = "GOLANG"
+	RunnerMaven  = "MAVEN"
+)

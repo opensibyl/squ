@@ -1,22 +1,25 @@
 package UnitSqueezer
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/opensibyl/UnitSqueezor/object"
 )
 
-func TestApi(t *testing.T) {
+func TestGolang(t *testing.T) {
 	conf := object.DefaultConfig()
 	conf.Dry = true
 	MainFlow(conf)
 }
 
-func TestA(t *testing.T) {
-	fmt.Println("aa")
-}
-
-func TestB(t *testing.T) {
-	fmt.Println("bb")
+func TestMaven(t *testing.T) {
+	t.Skip()
+	conf := object.DefaultConfig()
+	conf.Dry = true
+	conf.SrcDir = "../jacoco"
+	conf.Before = "HEAD~5"
+	conf.IndexerType = object.IndexerJavaJUnit
+	conf.RunnerType = object.RunnerMaven
+	conf.DiffFuncOutput = "./output.json"
+	MainFlow(conf)
 }

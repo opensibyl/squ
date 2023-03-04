@@ -15,8 +15,10 @@ type Runner interface {
 
 func GetRunner(runnerType object.RunnerType, conf object.SharedConfig) (Runner, error) {
 	switch runnerType {
-	case object.RunnerGo:
+	case object.RunnerGolang:
 		return NewGolangRunner(&conf)
+	case object.RunnerMaven:
+		return NewMavenRunner(&conf)
 	}
 	return nil, fmt.Errorf("no runner type named: %v", runnerType)
 }

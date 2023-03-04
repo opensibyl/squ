@@ -58,7 +58,7 @@ func MainFlow(conf object.SharedConfig) {
 	log.Log.Infof("sibyl2 backend ready")
 
 	// 1. upload and tag
-	curIndexer, err := indexer.NewIndexer(&conf)
+	curIndexer, err := indexer.GetIndexer(conf.IndexerType, &conf)
 	err = curIndexer.UploadSrc(sharedContext)
 	PanicIfErr(err)
 	err = curIndexer.TagCases(sharedContext)
