@@ -79,14 +79,16 @@ func MainFlow(conf object.SharedConfig) {
 	}
 
 	// 3. runner
-	runner, err := runner.NewGolangRunner(&conf)
+	curRunner, err := runner.NewGolangRunner(&conf)
 	PanicIfErr(err)
-	cases, err := runner.GetRelatedCases(sharedContext, diffMap)
+	cases, err := curRunner.GetRelatedCases(sharedContext, diffMap)
 	PanicIfErr(err)
 
 	if !conf.Dry {
+		// shutdown sibyl2 before running cases because of its ports
+		stop()
 		log.Log.Infof("start running cases: %v", len(cases))
-		err = runner.Run(cases, sharedContext)
+		err = curRunner.Run(cases, sharedContext)
 		PanicIfErr(err)
 	}
 }
