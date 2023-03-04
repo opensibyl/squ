@@ -80,7 +80,7 @@ func MainFlow(conf object.SharedConfig) {
 	}
 
 	// 3. runner
-	curRunner, err := runner.NewGolangRunner(&conf)
+	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 	cases, err := curRunner.GetRelatedCases(sharedContext, diffMap)
 	PanicIfErr(err)

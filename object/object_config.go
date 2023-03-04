@@ -9,14 +9,15 @@ import (
 )
 
 type SharedConfig struct {
-	SrcDir         string    `json:"srcDir"`
-	RepoInfo       *RepoInfo `json:"repoInfo"`
-	SibylUrl       string    `json:"sibylUrl"`
-	BatchId        int       `json:"batchId"`
-	Before         string    `json:"before"`
-	After          string    `json:"after"`
-	DiffFuncOutput string    `json:"diffFuncOutput"`
-	Dry            bool      `json:"dry"`
+	SrcDir         string     `json:"srcDir"`
+	RepoInfo       *RepoInfo  `json:"repoInfo"`
+	SibylUrl       string     `json:"sibylUrl"`
+	BatchId        int        `json:"batchId"`
+	Before         string     `json:"before"`
+	After          string     `json:"after"`
+	DiffFuncOutput string     `json:"diffFuncOutput"`
+	Dry            bool       `json:"dry"`
+	RunnerType     RunnerType `json:"runnerType"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -29,6 +30,7 @@ func DefaultConfig() SharedConfig {
 		"HEAD",
 		"",
 		false,
+		RunnerGo,
 	}
 }
 
