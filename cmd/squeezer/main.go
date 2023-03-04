@@ -1,7 +1,23 @@
 package main
 
-import UnitSqueezer "github.com/opensibyl/UnitSqueezor"
+import (
+	"flag"
+
+	UnitSqueezer "github.com/opensibyl/UnitSqueezor"
+	"github.com/opensibyl/UnitSqueezor/object"
+)
 
 func main() {
-	UnitSqueezer.MainFlow()
+	// cmd parse
+	src := flag.String("src", ".", "repo path")
+	before := flag.String("before", "HEAD~1", "before rev")
+	after := flag.String("after", "HEAD", "after rev")
+	flag.Parse()
+
+	config := object.DefaultConfig()
+	config.SrcDir = *src
+	config.Before = *before
+	config.After = *after
+
+	UnitSqueezer.MainFlow(config)
 }

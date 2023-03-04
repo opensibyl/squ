@@ -13,6 +13,8 @@ type SharedConfig struct {
 	RepoInfo *RepoInfo `json:"repoInfo"`
 	SibylUrl string    `json:"sibylUrl"`
 	BatchId  int       `json:"batchId"`
+	Before   string    `json:"before"`
+	After    string    `json:"after"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -21,6 +23,8 @@ func DefaultConfig() SharedConfig {
 		nil,
 		"http://127.0.0.1:9876",
 		int(time.Now().UnixMicro()),
+		"HEAD~1",
+		"HEAD",
 	}
 }
 

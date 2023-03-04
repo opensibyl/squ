@@ -19,7 +19,7 @@ type GitExtractor struct {
 }
 
 func (g *GitExtractor) ExtractDiffMap(_ context.Context) (object.DiffMap, error) {
-	gitDiffCmd := exec.Command("git", "diff", "HEAD~1", "HEAD")
+	gitDiffCmd := exec.Command("git", "diff", g.config.Before, g.config.After)
 	gitDiffCmd.Dir = g.config.SrcDir
 	patchRaw, err := gitDiffCmd.CombinedOutput()
 	if err != nil {

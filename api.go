@@ -33,11 +33,10 @@ func PanicIfErr(err error) {
 	}
 }
 
-func MainFlow() {
+func MainFlow(conf object.SharedConfig) {
 	sharedContext := context.Background()
 
 	// init config
-	conf := object.DefaultConfig()
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
