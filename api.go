@@ -1,7 +1,6 @@
 package UnitSqueezer
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -49,10 +48,12 @@ func MainFlow(conf object.SharedConfig) {
 
 	// 0. start sibyl2 backend
 	cmd := server2.NewServerCmd()
-	b := bytes.NewBufferString("")
-	cmd.SetOut(b)
+	cmd.SetArgs([]string{})
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	go cmd.ExecuteContext(ctx)
+	go func() {
+		err := cmd.ExecuteContext(ctx)
+		PanicIfErr(err)
+	}()
 	defer stop()
 	log.Log.Infof("sibyl2 backend ready")
 
