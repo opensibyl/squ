@@ -4,10 +4,11 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/opensibyl/UnitSqueezor/extractor"
 	"github.com/opensibyl/UnitSqueezor/indexer"
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
-	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/UnitSqueezor/runner"
 )
 
 /*
@@ -52,24 +53,17 @@ func MainFlow() {
 
 	// 2. calc
 	// line level diff
-	extractor, err := NewDiffExtractor(&conf)
+	curExtractor, err := extractor.NewDiffExtractor(&conf)
 	PanicIfErr(err)
-	diffMap, err := extractor.ExtractDiffMethods(sharedContext)
+	diffMap, err := curExtractor.ExtractDiffMethods(sharedContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff map: %v", diffMap)
 
 	// 3. executor
-	executor, err := NewGoExecutor(&conf)
+	executor, err := runner.NewGolangRunner(&conf)
 	PanicIfErr(err)
 	cases, err := executor.GetRelatedCases(sharedContext, diffMap)
 	PanicIfErr(err)
-	err = executor.Execute(cases, sharedContext)
+	err = executor.Run(cases, sharedContext)
 	PanicIfErr(err)
-}
-
-type FunctionWithState struct {
-	*openapi.ObjectFunctionWithSignature
-
-	Reachable bool
-	ReachBy   []string
 }

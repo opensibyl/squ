@@ -18,8 +18,8 @@ func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
 	conf := upload.DefaultConfig()
 	conf.Src = baseIndexer.config.SrcDir
 	conf.Url = baseIndexer.config.SibylUrl
-	conf.RepoId = baseIndexer.config.RepoInfo.Name
-	conf.RevHash = baseIndexer.config.RepoInfo.CommitId
+	conf.RepoId = baseIndexer.config.RepoInfo.RepoId
+	conf.RevHash = baseIndexer.config.RepoInfo.RevHash
 	upload.ExecWithConfig(conf)
 	return nil
 }
@@ -29,8 +29,8 @@ func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, taggedSet
 	tagReach := baseIndexer.config.GetReachTag()
 	tagReachBy := object.TagPrefixReachBy + caseSignature
 
-	repo := baseIndexer.config.RepoInfo.Name
-	rev := baseIndexer.config.RepoInfo.CommitId
+	repo := baseIndexer.config.RepoInfo.RepoId
+	rev := baseIndexer.config.RepoInfo.RevHash
 
 	// tag itself
 	if _, tagged := taggedSet.Load(signature); tagged {

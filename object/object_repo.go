@@ -8,8 +8,8 @@ import (
 )
 
 type RepoInfo struct {
-	Name     string `json:"name"`
-	CommitId string `json:"commitId"`
+	RepoId  string `json:"repoId"`
+	RevHash string `json:"revHash"`
 }
 
 func GetRepoInfoFromDir(srcDir string) (*RepoInfo, error) {
@@ -23,7 +23,7 @@ func GetRepoInfoFromDir(srcDir string) (*RepoInfo, error) {
 	}
 
 	return &RepoInfo{
-		Name:     filepath.Base(srcDir),
-		CommitId: head.Hash().String(),
+		RepoId:  filepath.Base(srcDir),
+		RevHash: head.Hash().String(),
 	}, nil
 }

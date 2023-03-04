@@ -13,8 +13,8 @@ type GoIndexer struct {
 }
 
 func (i *GoIndexer) TagCases(ctx context.Context) error {
-	repo := i.config.RepoInfo.Name
-	rev := i.config.RepoInfo.CommitId
+	repo := i.config.RepoInfo.RepoId
+	rev := i.config.RepoInfo.RevHash
 
 	functionWithPaths, _, _ := i.apiClient.RegexQueryApi.
 		ApiV1RegexFuncGet(ctx).

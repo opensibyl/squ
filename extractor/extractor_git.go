@@ -1,4 +1,4 @@
-package UnitSqueezer
+package extractor
 
 import (
 	"context"
@@ -13,31 +13,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type DiffMap = map[string][]int
-type DiffFuncMap = map[string][]*FunctionWithState
-
-type DiffExtractor interface {
-	ExtractDiffMap(_ context.Context) (DiffMap, error)
-	ExtractDiffMethods(ctx context.Context) (DiffFuncMap, error)
-}
-
-func NewDiffExtractor(config *object.SharedConfig) (DiffExtractor, error) {
-	apiClient, err := config.NewSibylClient()
-	if err != nil {
-		return nil, err
-	}
-	return &GitExtractor{
-		config,
-		apiClient,
-	}, nil
-}
-
 type GitExtractor struct {
 	config    *object.SharedConfig
 	apiClient *openapi.APIClient
 }
 
-func (g *GitExtractor) ExtractDiffMap(_ context.Context) (DiffMap, error) {
+func (g *GitExtractor) ExtractDiffMap(_ context.Context) (object.DiffMap, error) {
 	gitDiffCmd := exec.Command("git", "diff", "HEAD~1", "HEAD")
 	gitDiffCmd.Dir = g.config.SrcDir
 	patchRaw, err := gitDiffCmd.CombinedOutput()
@@ -49,14 +30,14 @@ func (g *GitExtractor) ExtractDiffMap(_ context.Context) (DiffMap, error) {
 	return ext.Unified2Affected(patchRaw)
 }
 
-func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*FunctionWithState, error) {
+func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*object.FunctionWithState, error) {
 	diffMap, err := g.ExtractDiffMap(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// method level diff, and influence
-	influencedMethods := make(map[string][]*FunctionWithState)
+	influencedMethods := make(map[string][]*object.FunctionWithState)
 	for eachFile, eachLineList := range diffMap {
 		eachLineStrList := make([]string, 0, len(eachLineList))
 		for _, eachLine := range eachLineList {
@@ -64,15 +45,17 @@ func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*Fu
 		}
 		functionWithSignatures, _, err := g.apiClient.BasicQueryApi.
 			ApiV1FuncGet(ctx).
-			Repo(g.config.RepoInfo.Name).
-			Rev(g.config.RepoInfo.CommitId).
+			Repo(g.config.RepoInfo.RepoId).
+			Rev(g.config.RepoInfo.RevHash).
 			File(eachFile).
 			Lines(strings.Join(eachLineStrList, ",")).
 			Execute()
-		PanicIfErr(err)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, eachFunc := range functionWithSignatures {
-			eachFuncWithState := &FunctionWithState{
+			eachFuncWithState := &object.FunctionWithState{
 				ObjectFunctionWithSignature: &eachFunc,
 				Reachable:                   false,
 				ReachBy:                     make([]string, 0),
