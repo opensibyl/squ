@@ -13,7 +13,8 @@ import (
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	"github.com/opensibyl/UnitSqueezor/runner"
-	server2 "github.com/opensibyl/sibyl2/cmd/sibyl/subs/server"
+	"github.com/opensibyl/sibyl2/pkg/server"
+	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
 )
 
 /*
@@ -47,11 +48,12 @@ func MainFlow(conf object.SharedConfig) {
 	conf.SrcDir = absSrcDir
 
 	// 0. start sibyl2 backend
-	cmd := server2.NewServerCmd()
-	cmd.SetArgs([]string{})
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		err := cmd.ExecuteContext(ctx)
+		config := object2.DefaultExecuteConfig()
+		// for performance
+		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
+		err := server.Execute(config, ctx)
 		PanicIfErr(err)
 	}()
 	defer stop()
