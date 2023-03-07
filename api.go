@@ -46,13 +46,17 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
 
+	rootContext := context.Background()
+	sibylContext, cancel := context.WithCancel(rootContext)
+	defer cancel()
+
 	// 0. start sibyl2 backend
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	sibylContext, stop := signal.NotifyContext(sibylContext, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		config := object2.DefaultExecuteConfig()
 		// for performance
 		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
-		err := server.Execute(config, ctx)
+		err := server.Execute(config, sibylContext)
 		PanicIfErr(err)
 	}()
 	defer stop()
@@ -60,17 +64,19 @@ func MainFlow(conf object.SharedConfig) {
 
 	// 1. upload and tag
 	curIndexer, err := indexer.GetIndexer(conf.IndexerType, &conf)
-	err = curIndexer.UploadSrc(ctx)
+	err = curIndexer.UploadSrc(sibylContext)
 	PanicIfErr(err)
-	err = curIndexer.TagCases(ctx)
+	err = curIndexer.TagCases(sibylContext)
 	PanicIfErr(err)
 	log.Log.Infof("indexer ready")
 
 	// 2. calc
 	// line level diff
+	calcContext, cancel := context.WithCancel(rootContext)
+	defer cancel()
 	curExtractor, err := extractor.NewDiffExtractor(&conf)
 	PanicIfErr(err)
-	diffMap, err := curExtractor.ExtractDiffMethods(ctx)
+	diffMap, err := curExtractor.ExtractDiffMethods(calcContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff calc ready: %v", len(diffMap))
 	if conf.DiffFuncOutput != "" {
@@ -81,6 +87,8 @@ func MainFlow(conf object.SharedConfig) {
 	}
 
 	// 3. runner
+	runnerContext, cancel := context.WithCancel(rootContext)
+	defer cancel()
 	tagCache := curIndexer.GetTagMap()
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
@@ -88,7 +96,7 @@ func MainFlow(conf object.SharedConfig) {
 	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
 	for _, eachFunctionList := range diffMap {
 		for _, eachFunc := range eachFunctionList {
-			cases, err := curRunner.GetRelatedCases(ctx, *tagCache, eachFunc.GetSignature())
+			cases, err := curRunner.GetRelatedCases(runnerContext, *tagCache, eachFunc.GetSignature())
 			PanicIfErr(err)
 			for _, eachCase := range cases {
 				caseSet[eachCase.GetSignature()] = eachCase
@@ -102,12 +110,10 @@ func MainFlow(conf object.SharedConfig) {
 		casesToRun = append(casesToRun, each)
 	}
 
+	// shutdown sibyl2 before running cases because of its ports
+	stop()
 	if !conf.Dry {
-		// shutdown sibyl2 before running cases because of its ports
-		stop()
 		log.Log.Infof("start running cases: %v", len(caseSet))
-
-		runnerContext := context.Background()
 		err = curRunner.Run(casesToRun, runnerContext)
 		PanicIfErr(err)
 	}
