@@ -2,7 +2,7 @@ package runner
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
@@ -18,11 +18,15 @@ func (m *MavenRunner) Run(cases []*openapi.ObjectFunctionWithSignature, ctx cont
 	parts := make([]string, 0, len(cases))
 	for _, each := range cases {
 		extras := each.GetExtras()
-		curPart := strings.Join([]string{
-			extras["packageName"].(string),
-			extras["className"].(string),
-			each.GetName()}, "")
-		parts = append(parts, curPart)
+		log.Log.Infof("map: %v", extras)
+
+		clazzName, clazzNameExisted := extras["className"].(string)
+		if !clazzNameExisted {
+			log.Log.Warnf("class name not found in: %v", each.GetName())
+			continue
+		}
+		curPartStr := fmt.Sprintf("%s#%s", clazzName, each.GetName())
+		parts = append(parts, curPartStr)
 	}
 	log.Log.Infof("%v", parts)
 	return nil

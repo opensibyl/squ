@@ -2,10 +2,6 @@ package indexer
 
 import (
 	"context"
-	"sync"
-
-	"github.com/opensibyl/UnitSqueezor/object"
-	openapi "github.com/opensibyl/sibyl-go-client"
 )
 
 type GoIndexer struct {
@@ -24,21 +20,10 @@ func (i *GoIndexer) TagCases(ctx context.Context) error {
 		Regex("^Test.*").
 		Execute()
 
-	// case is case, will not change
-	tagCase := object.TagCase
 	// tag cases
-	var taggedMap sync.Map
 	for _, eachCaseMethod := range functionWithPaths {
-		// all the errors from tag will be ignored
-		_, _ = i.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
-			RepoId:    &repo,
-			RevHash:   &rev,
-			Signature: eachCaseMethod.Signature,
-			Tag:       &tagCase,
-		}).Execute()
-
 		// tag all, and all their calls
-		go i.TagCaseInfluence(eachCaseMethod.GetSignature(), &taggedMap, eachCaseMethod.GetSignature(), ctx)
+		i.TagCaseInfluence(eachCaseMethod.GetSignature(), ctx)
 	}
 
 	return nil

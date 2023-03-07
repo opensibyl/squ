@@ -13,6 +13,7 @@ import (
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	"github.com/opensibyl/UnitSqueezor/runner"
+	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/pkg/server"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
 )
@@ -40,8 +41,6 @@ func PanicIfErr(err error) {
 }
 
 func MainFlow(conf object.SharedConfig) {
-	sharedContext := context.Background()
-
 	// init config
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
@@ -61,9 +60,9 @@ func MainFlow(conf object.SharedConfig) {
 
 	// 1. upload and tag
 	curIndexer, err := indexer.GetIndexer(conf.IndexerType, &conf)
-	err = curIndexer.UploadSrc(sharedContext)
+	err = curIndexer.UploadSrc(ctx)
 	PanicIfErr(err)
-	err = curIndexer.TagCases(sharedContext)
+	err = curIndexer.TagCases(ctx)
 	PanicIfErr(err)
 	log.Log.Infof("indexer ready")
 
@@ -71,7 +70,7 @@ func MainFlow(conf object.SharedConfig) {
 	// line level diff
 	curExtractor, err := extractor.NewDiffExtractor(&conf)
 	PanicIfErr(err)
-	diffMap, err := curExtractor.ExtractDiffMethods(sharedContext)
+	diffMap, err := curExtractor.ExtractDiffMethods(ctx)
 	PanicIfErr(err)
 	log.Log.Infof("diff calc ready: %v", len(diffMap))
 	if conf.DiffFuncOutput != "" {
@@ -82,16 +81,34 @@ func MainFlow(conf object.SharedConfig) {
 	}
 
 	// 3. runner
+	tagCache := curIndexer.GetTagMap()
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
-	cases, err := curRunner.GetRelatedCases(sharedContext, diffMap)
+
+	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
+	for _, eachFunctionList := range diffMap {
+		for _, eachFunc := range eachFunctionList {
+			cases, err := curRunner.GetRelatedCases(ctx, *tagCache, eachFunc.GetSignature())
+			PanicIfErr(err)
+			for _, eachCase := range cases {
+				caseSet[eachCase.GetSignature()] = eachCase
+			}
+		}
+	}
 	PanicIfErr(err)
+
+	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0, len(caseSet))
+	for _, each := range caseSet {
+		casesToRun = append(casesToRun, each)
+	}
 
 	if !conf.Dry {
 		// shutdown sibyl2 before running cases because of its ports
 		stop()
-		log.Log.Infof("start running cases: %v", len(cases))
-		err = curRunner.Run(cases, sharedContext)
+		log.Log.Infof("start running cases: %v", len(caseSet))
+
+		runnerContext := context.Background()
+		err = curRunner.Run(casesToRun, runnerContext)
 		PanicIfErr(err)
 	}
 }

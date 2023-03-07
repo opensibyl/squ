@@ -9,7 +9,7 @@ import (
 )
 
 type Runner interface {
-	GetRelatedCases(ctx context.Context, diffFuncMap object.DiffFuncMap) ([]*openapi.ObjectFunctionWithSignature, error)
+	GetRelatedCases(ctx context.Context, caseTagCache object.CaseTagCache, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error)
 	Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error
 }
 

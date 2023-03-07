@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/dominikbraun/graph"
+	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2"
@@ -18,6 +18,7 @@ type BaseIndexer struct {
 	apiClient             *openapi.APIClient
 	graphCache            *sibyl2.FuncGraph
 	graphSignatureMapping map[string][]string
+	caseTagCache          object.CaseTagCache
 }
 
 func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
@@ -26,15 +27,19 @@ func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
 	conf.Url = baseIndexer.config.SibylUrl
 	conf.RepoId = baseIndexer.config.RepoInfo.RepoId
 	conf.RevHash = baseIndexer.config.RepoInfo.RevHash
+
+	// todo: use ctx
 	err := upload.ExecWithConfig(conf)
 	if err != nil {
 		return err
 	}
+
+	// cache the graph
 	baseIndexer.graphCache = conf.BizContext.GraphCache
 	if err != nil {
 		return fmt.Errorf("no graph cache found after upload")
 	}
-
+	// for mapping graph key and sibyl key
 	baseIndexer.graphSignatureMapping = make(map[string][]string, 0)
 	cg := baseIndexer.graphCache.CallGraph
 	adjacencyMap, err := cg.AdjacencyMap()
@@ -46,17 +51,12 @@ func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
 		signature := functionWithPath.GetSignature()
 		baseIndexer.graphSignatureMapping[signature] = append(baseIndexer.graphSignatureMapping[signature], k)
 	}
+	// init
+	baseIndexer.caseTagCache = make(object.CaseTagCache)
 	return nil
 }
 
-func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, taggedSet *sync.Map, signature string, ctx context.Context) error {
-	// if batch id changed, will recalc
-	tagReach := baseIndexer.config.GetReachTag()
-	tagReachBy := object.TagPrefixReachBy + caseSignature
-
-	repo := baseIndexer.config.RepoInfo.RepoId
-	rev := baseIndexer.config.RepoInfo.RevHash
-
+func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, _ context.Context) error {
 	cases, ok := baseIndexer.graphSignatureMapping[caseSignature]
 	if !ok {
 		return errors.New("no case found: " + caseSignature)
@@ -77,22 +77,11 @@ func (baseIndexer *BaseIndexer) TagCaseInfluence(caseSignature string, taggedSet
 		}
 	}
 
-	// tag
-	for k := range tagMap {
-		go func() {
-			baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
-				RepoId:    &repo,
-				RevHash:   &rev,
-				Signature: &k,
-				Tag:       &tagReach,
-			}).Execute()
-			baseIndexer.apiClient.TagApi.ApiV1TagFuncPost(ctx).Payload(openapi.ServiceTagUpload{
-				RepoId:    &repo,
-				RevHash:   &rev,
-				Signature: &k,
-				Tag:       &tagReachBy,
-			}).Execute()
-		}()
-	}
+	log.Log.Infof("case %s influence: %d", caseSignature, len(tagMap))
+	baseIndexer.caseTagCache[caseSignature] = tagMap
 	return nil
+}
+
+func (baseIndexer *BaseIndexer) GetTagMap() *object.CaseTagCache {
+	return &baseIndexer.caseTagCache
 }
