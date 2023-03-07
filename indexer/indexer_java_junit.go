@@ -22,8 +22,10 @@ func (j *JavaJunitIndexer) TagCases(ctx context.Context) error {
 
 	// tag cases
 	for _, eachCaseMethod := range functionWithPaths {
-		// tag all, and all their calls
-		j.TagCaseInfluence(eachCaseMethod.GetSignature(), ctx)
+		err := j.TagCase(eachCaseMethod.GetSignature(), ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -56,6 +56,7 @@ func MainFlow(conf object.SharedConfig) {
 		config := object2.DefaultExecuteConfig()
 		// for performance
 		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
+		config.EnableLog = true
 		err := server.Execute(config, sibylContext)
 		PanicIfErr(err)
 	}()
@@ -87,16 +88,17 @@ func MainFlow(conf object.SharedConfig) {
 	}
 
 	// 3. runner
+	log.Log.Infof("runner scope")
 	runnerContext, cancel := context.WithCancel(rootContext)
 	defer cancel()
-	tagCache := curIndexer.GetTagMap()
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 
 	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
 	for _, eachFunctionList := range diffMap {
+		log.Log.Infof("get related cases: %v", len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
-			cases, err := curRunner.GetRelatedCases(runnerContext, *tagCache, eachFunc.GetSignature())
+			cases, err := curRunner.GetRelatedCases(runnerContext, eachFunc.GetSignature())
 			PanicIfErr(err)
 			for _, eachCase := range cases {
 				caseSet[eachCase.GetSignature()] = eachCase

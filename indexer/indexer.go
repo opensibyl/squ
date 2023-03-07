@@ -11,8 +11,6 @@ type Indexer interface {
 	UploadSrc(ctx context.Context) error
 	// TagCases different framework should have different rules
 	TagCases(ctx context.Context) error
-	TagCaseInfluence(caseSignature string, ctx context.Context) error
-	GetTagMap() *object.CaseTagCache
 }
 
 func GetIndexer(indexerType object.IndexerType, config *object.SharedConfig) (Indexer, error) {

@@ -10,7 +10,6 @@ import (
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/pkg/core"
 	"github.com/opensibyl/sibyl2/pkg/ext"
-	"golang.org/x/exp/slices"
 )
 
 type GitExtractor struct {
@@ -61,26 +60,6 @@ func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*ob
 				ReachBy:                     make([]string, 0),
 			}
 			influencedMethods[eachFile] = append(influencedMethods[eachFile], eachFuncWithState)
-		}
-	}
-
-	// reachable?
-	influenceTag := g.config.GetReachTag()
-	for _, methods := range influencedMethods {
-		for _, eachMethod := range methods {
-			if slices.Contains(eachMethod.Tags, influenceTag) {
-				eachMethod.Reachable = true
-				// reach by whom
-				for _, eachTag := range eachMethod.Tags {
-					if !strings.Contains(eachTag, object.TagPrefixReachBy) {
-						continue
-					}
-					caseSignature := strings.TrimPrefix(eachTag, object.TagPrefixReachBy)
-					eachMethod.ReachBy = append(eachMethod.ReachBy, caseSignature)
-				}
-			} else {
-				eachMethod.Reachable = false
-			}
 		}
 	}
 	return influencedMethods, nil

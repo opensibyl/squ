@@ -1,7 +1,6 @@
 package object
 
 import (
-	"fmt"
 	"net/url"
 	"time"
 
@@ -46,8 +45,4 @@ func (conf *SharedConfig) NewSibylClient() (*openapi.APIClient, error) {
 	configuration.Scheme = parsed.Scheme
 	configuration.Host = parsed.Host
 	return openapi.NewAPIClient(configuration), nil
-}
-
-func (conf *SharedConfig) GetReachTag() string {
-	return fmt.Sprintf("%s%d", TagPrefixReach, conf.BatchId)
 }

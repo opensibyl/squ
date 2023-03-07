@@ -22,8 +22,10 @@ func (i *GoIndexer) TagCases(ctx context.Context) error {
 
 	// tag cases
 	for _, eachCaseMethod := range functionWithPaths {
-		// tag all, and all their calls
-		i.TagCaseInfluence(eachCaseMethod.GetSignature(), ctx)
+		err := i.TagCase(eachCaseMethod.GetSignature(), ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

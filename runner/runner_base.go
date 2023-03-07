@@ -2,38 +2,80 @@ package runner
 
 import (
 	"context"
+	"sync"
 
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"golang.org/x/exp/slices"
 )
+
+var cache sync.Map
 
 type BaseRunner struct {
 	config    *object.SharedConfig
 	apiClient *openapi.APIClient
 }
 
-func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, caseTagCache object.CaseTagCache, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error) {
-	relatedCases := make([]string, 0)
-	for caseSignature, m := range caseTagCache {
-		if _, ok := m[targetSignature]; ok {
-			relatedCases = append(relatedCases, caseSignature)
-		}
+func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error) {
+	// todo: slow in big repo
+	var endpoints sync.Map
+	var walked sync.Map
+	err := baseRunner.fillRelatedCases(ctx, targetSignature, &endpoints, &walked)
+	if err != nil {
+		return nil, err
 	}
 
-	r := make([]*openapi.ObjectFunctionWithSignature, 0, len(relatedCases))
-	for _, each := range relatedCases {
-
-		cur, _, err := baseRunner.apiClient.
-			SignatureQueryApi.
+	ret := make([]*openapi.ObjectFunctionWithSignature, 0)
+	endpoints.Range(func(key any, _ any) bool {
+		// todo: multi request here
+		functionWithSignature, _, err := baseRunner.apiClient.SignatureQueryApi.
 			ApiV1SignatureFuncGet(ctx).
 			Repo(baseRunner.config.RepoInfo.RepoId).
 			Rev(baseRunner.config.RepoInfo.RevHash).
-			Signature(each).
+			Signature(targetSignature).
 			Execute()
 		if err != nil {
-			return nil, err
+			return false
 		}
-		r = append(r, cur)
+		// it's a case
+		if slices.Contains(functionWithSignature.GetTags(), object.TagCase) {
+			ret = append(ret, functionWithSignature)
+		}
+		return true
+	})
+
+	return ret, nil
+}
+
+func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, m *sync.Map, walked *sync.Map) error {
+	var rcalls []string
+	if item, ok := cache.Load(targetSignature); ok {
+		ctxSlim := item.([]string)
+		rcalls = ctxSlim
+	} else {
+		item, _, err := baseRunner.apiClient.SignatureQueryApi.
+			ApiV1SignatureFuncctxGet(ctx).
+			Repo(baseRunner.config.RepoInfo.RepoId).
+			Rev(baseRunner.config.RepoInfo.RevHash).
+			Signature(targetSignature).
+			Execute()
+		if err != nil {
+			return err
+		}
+		rcalls = item.GetReverseCalls()
+		cache.Store(targetSignature, rcalls)
 	}
-	return r, nil
+
+	walked.Store(targetSignature, nil)
+	if len(rcalls) == 0 {
+		m.Store(targetSignature, nil)
+		return nil
+	}
+	for _, each := range rcalls {
+		if _, ok := walked.Load(each); ok {
+			continue
+		}
+		go baseRunner.fillRelatedCases(ctx, each, m, walked)
+	}
+	return nil
 }
