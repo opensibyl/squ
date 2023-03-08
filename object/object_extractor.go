@@ -3,7 +3,7 @@ package object
 import openapi "github.com/opensibyl/sibyl-go-client"
 
 type FunctionWithState struct {
-	*openapi.ObjectFunctionWithSignature
+	openapi.ObjectFunctionWithSignature
 
 	Reachable bool
 	ReachBy   []string

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"golang.org/x/exp/slices"
@@ -17,17 +18,14 @@ type BaseRunner struct {
 }
 
 func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error) {
-	// todo: slow in big repo
-	var endpoints sync.Map
-	var walked sync.Map
-	err := baseRunner.fillRelatedCases(ctx, targetSignature, &endpoints, &walked)
+	var result sync.Map
+	err := baseRunner.fillRelatedCases(ctx, targetSignature, &result, make([]string, 0))
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]*openapi.ObjectFunctionWithSignature, 0)
-	endpoints.Range(func(key any, _ any) bool {
-		// todo: multi request here
+	result.Range(func(key any, _ any) bool {
 		functionWithSignature, _, err := baseRunner.apiClient.SignatureQueryApi.
 			ApiV1SignatureFuncGet(ctx).
 			Repo(baseRunner.config.RepoInfo.RepoId).
@@ -47,35 +45,50 @@ func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignatu
 	return ret, nil
 }
 
-func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, m *sync.Map, walked *sync.Map) error {
-	var rcalls []string
-	if item, ok := cache.Load(targetSignature); ok {
-		ctxSlim := item.([]string)
-		rcalls = ctxSlim
+func (baseRunner *BaseRunner) getFuncBySignature(ctx context.Context, signature string) (*openapi.Sibyl2FunctionContextSlim, error) {
+	if item, ok := cache.Load(signature); ok {
+		return item.(*openapi.Sibyl2FunctionContextSlim), nil
 	} else {
-		item, _, err := baseRunner.apiClient.SignatureQueryApi.
+		ret, _, err := baseRunner.apiClient.SignatureQueryApi.
 			ApiV1SignatureFuncctxGet(ctx).
 			Repo(baseRunner.config.RepoInfo.RepoId).
 			Rev(baseRunner.config.RepoInfo.RevHash).
-			Signature(targetSignature).
+			Signature(signature).
 			Execute()
+		if err != nil {
+			return nil, err
+		}
+		cache.Store(signature, ret)
+		return ret, nil
+	}
+}
+
+func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, result *sync.Map, l []string) error {
+	cur, err := baseRunner.getFuncBySignature(ctx, targetSignature)
+	if err != nil {
+		return err
+	}
+	// endpoint, store and return
+	rcalls := cur.ReverseCalls
+	if len(rcalls) == 0 {
+		log.Log.Infof("reach endpoint: %v", targetSignature)
+		result.Store(targetSignature, nil)
+		return nil
+	}
+	// continue searching
+	for _, each := range rcalls {
+		// self call
+		if each == targetSignature {
+			continue
+		}
+		// loop call
+		if slices.Contains(l, each) {
+			continue
+		}
+		err := baseRunner.fillRelatedCases(ctx, each, result, append(l, each))
 		if err != nil {
 			return err
 		}
-		rcalls = item.GetReverseCalls()
-		cache.Store(targetSignature, rcalls)
-	}
-
-	walked.Store(targetSignature, nil)
-	if len(rcalls) == 0 {
-		m.Store(targetSignature, nil)
-		return nil
-	}
-	for _, each := range rcalls {
-		if _, ok := walked.Load(each); ok {
-			continue
-		}
-		go baseRunner.fillRelatedCases(ctx, each, m, walked)
 	}
 	return nil
 }

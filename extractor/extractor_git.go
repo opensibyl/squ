@@ -55,7 +55,7 @@ func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*ob
 
 		for _, eachFunc := range functionWithSignatures {
 			eachFuncWithState := &object.FunctionWithState{
-				ObjectFunctionWithSignature: &eachFunc,
+				ObjectFunctionWithSignature: eachFunc,
 				Reachable:                   false,
 				ReachBy:                     make([]string, 0),
 			}

@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/opensibyl/sibyl-go-client v0.0.0-20230220171743-447d73d05385
-	github.com/opensibyl/sibyl2 v0.15.4-0.20230307145209-36c98f94f707
+	github.com/opensibyl/sibyl2 v0.15.4-0.20230308162203-e17318c214c5
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230306221820-f0f767cdffd6
 )

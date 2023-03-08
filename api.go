@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 
 	"github.com/opensibyl/UnitSqueezor/extractor"
@@ -56,7 +57,7 @@ func MainFlow(conf object.SharedConfig) {
 		config := object2.DefaultExecuteConfig()
 		// for performance
 		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
-		config.EnableLog = true
+		config.EnableLog = false
 		err := server.Execute(config, sibylContext)
 		PanicIfErr(err)
 	}()
@@ -95,15 +96,27 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 
 	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
-	for _, eachFunctionList := range diffMap {
-		log.Log.Infof("get related cases: %v", len(eachFunctionList))
+	for fileName, eachFunctionList := range diffMap {
+		log.Log.Infof("handle modified file: %s", fileName)
+		var wg sync.WaitGroup
+		wg.Add(len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
-			cases, err := curRunner.GetRelatedCases(runnerContext, eachFunc.GetSignature())
-			PanicIfErr(err)
-			for _, eachCase := range cases {
-				caseSet[eachCase.GetSignature()] = eachCase
-			}
+			log.Log.Infof("p: %v %v %v", eachFunc.GetPath(), eachFunc.GetSpan(), eachFunc.GetName())
+			go func(f *object.FunctionWithState) {
+				defer wg.Done()
+				log.Log.Infof("handle modified func: %v", f.GetSignature())
+				cases, err := curRunner.GetRelatedCases(runnerContext, f.GetSignature())
+				PanicIfErr(err)
+
+				var l sync.Mutex
+				l.Lock()
+				defer l.Unlock()
+				for _, eachCase := range cases {
+					caseSet[eachCase.GetSignature()] = eachCase
+				}
+			}(eachFunc)
 		}
+		wg.Wait()
 	}
 	PanicIfErr(err)
 
