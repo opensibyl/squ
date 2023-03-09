@@ -81,12 +81,6 @@ func MainFlow(conf object.SharedConfig) {
 	diffMap, err := curExtractor.ExtractDiffMethods(calcContext)
 	PanicIfErr(err)
 	log.Log.Infof("diff calc ready: %v", len(diffMap))
-	if conf.DiffFuncOutput != "" {
-		diffFuncOutputBytes, err := json.Marshal(diffMap)
-		PanicIfErr(err)
-		err = os.WriteFile(conf.DiffFuncOutput, diffFuncOutputBytes, os.ModePerm)
-		PanicIfErr(err)
-	}
 
 	// 3. runner
 	log.Log.Infof("runner scope")
@@ -97,13 +91,12 @@ func MainFlow(conf object.SharedConfig) {
 
 	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
 	for fileName, eachFunctionList := range diffMap {
-		log.Log.Infof("handle modified file: %s", fileName)
+		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
 		var wg sync.WaitGroup
 		wg.Add(len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
 			go func(f object.FunctionWithState) {
 				defer wg.Done()
-				log.Log.Infof("handle modified func: %v", f.GetSignature())
 				cases, err := curRunner.GetRelatedCases(runnerContext, f.GetSignature())
 				PanicIfErr(err)
 
@@ -123,12 +116,27 @@ func MainFlow(conf object.SharedConfig) {
 	for _, each := range caseSet {
 		casesToRun = append(casesToRun, each)
 	}
+	if conf.JsonOutput != "" {
+		o := &Output{}
+		o.DiffMap = diffMap
+		o.Cases = casesToRun
+		diffFuncOutputBytes, err := json.Marshal(o)
+		PanicIfErr(err)
+		err = os.WriteFile(conf.JsonOutput, diffFuncOutputBytes, os.ModePerm)
+		PanicIfErr(err)
+	}
 
 	// shutdown sibyl2 before running cases because of its ports
 	stop()
+	log.Log.Infof("ready to run")
 	if !conf.Dry {
 		log.Log.Infof("start running cases: %v", len(caseSet))
 		err = curRunner.Run(casesToRun, runnerContext)
 		PanicIfErr(err)
 	}
+}
+
+type Output struct {
+	DiffMap object.DiffFuncMap                     `json:"diff"`
+	Cases   []*openapi.ObjectFunctionWithSignature `json:"cases"`
 }

@@ -12,7 +12,7 @@ func main() {
 	src := flag.String("src", ".", "repo path")
 	before := flag.String("before", "HEAD~1", "before rev")
 	after := flag.String("after", "HEAD", "after rev")
-	diffOutput := flag.String("diffOutput", "", "diff output")
+	diffOutput := flag.String("jsonOutput", "", "diff output")
 	dry := flag.Bool("dry", false, "dry")
 	indexerType := flag.String("indexer", object.IndexerGolang, "indexer type")
 	runnerType := flag.String("runner", object.RunnerGolang, "runner type")
@@ -22,7 +22,7 @@ func main() {
 	config.SrcDir = *src
 	config.Before = *before
 	config.After = *after
-	config.DiffFuncOutput = *diffOutput
+	config.JsonOutput = *diffOutput
 	config.Dry = *dry
 	config.IndexerType = *indexerType
 	config.RunnerType = *runnerType
