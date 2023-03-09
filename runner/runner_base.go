@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"golang.org/x/exp/slices"
@@ -74,14 +73,9 @@ func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignat
 	// endpoint, store and return
 	reversedCalls := cur.ReverseCalls
 
-	if len(reversedCalls) == 0 {
-		log.Log.Infof("reach endpoint: %v", targetSignature)
-		return []string{targetSignature}, nil
-	}
 	// path, continue searching
 	v, ok := reachCache.Load(targetSignature)
 	if ok {
-		log.Log.Infof("hit: %v %v", targetSignature, l)
 		return v.([]string), nil
 	}
 

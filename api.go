@@ -101,8 +101,7 @@ func MainFlow(conf object.SharedConfig) {
 		var wg sync.WaitGroup
 		wg.Add(len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
-			log.Log.Infof("p: %v %v %v", eachFunc.GetPath(), eachFunc.GetSpan(), eachFunc.GetName())
-			go func(f *object.FunctionWithState) {
+			go func(f object.FunctionWithState) {
 				defer wg.Done()
 				log.Log.Infof("handle modified func: %v", f.GetSignature())
 				cases, err := curRunner.GetRelatedCases(runnerContext, f.GetSignature())
@@ -114,7 +113,7 @@ func MainFlow(conf object.SharedConfig) {
 				for _, eachCase := range cases {
 					caseSet[eachCase.GetSignature()] = eachCase
 				}
-			}(eachFunc)
+			}(*eachFunc)
 		}
 		wg.Wait()
 	}
