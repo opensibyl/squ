@@ -11,6 +11,7 @@ import (
 )
 
 var cache sync.Map
+var reachCache sync.Map
 
 type BaseRunner struct {
 	config    *object.SharedConfig
@@ -18,29 +19,31 @@ type BaseRunner struct {
 }
 
 func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error) {
-	var result sync.Map
-	err := baseRunner.fillRelatedCases(ctx, targetSignature, &result, make([]string, 0))
+	result := make(map[string]interface{})
+	resultList, err := baseRunner.fillRelatedCases(ctx, targetSignature, make([]string, 0))
 	if err != nil {
 		return nil, err
 	}
+	for _, each := range resultList {
+		result[each] = nil
+	}
 
 	ret := make([]*openapi.ObjectFunctionWithSignature, 0)
-	result.Range(func(key any, _ any) bool {
+	for eachEndpoint := range result {
 		functionWithSignature, _, err := baseRunner.apiClient.SignatureQueryApi.
 			ApiV1SignatureFuncGet(ctx).
 			Repo(baseRunner.config.RepoInfo.RepoId).
 			Rev(baseRunner.config.RepoInfo.RevHash).
-			Signature(targetSignature).
+			Signature(eachEndpoint).
 			Execute()
 		if err != nil {
-			return false
+			return nil, err
 		}
 		// it's a case
 		if slices.Contains(functionWithSignature.GetTags(), object.TagCase) {
 			ret = append(ret, functionWithSignature)
 		}
-		return true
-	})
+	}
 
 	return ret, nil
 }
@@ -63,20 +66,27 @@ func (baseRunner *BaseRunner) getFuncBySignature(ctx context.Context, signature 
 	}
 }
 
-func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, result *sync.Map, l []string) error {
+func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, l []string) ([]string, error) {
 	cur, err := baseRunner.getFuncBySignature(ctx, targetSignature)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// endpoint, store and return
-	rcalls := cur.ReverseCalls
-	if len(rcalls) == 0 {
+	reversedCalls := cur.ReverseCalls
+
+	if len(reversedCalls) == 0 {
 		log.Log.Infof("reach endpoint: %v", targetSignature)
-		result.Store(targetSignature, nil)
-		return nil
+		return []string{targetSignature}, nil
 	}
-	// continue searching
-	for _, each := range rcalls {
+	// path, continue searching
+	v, ok := reachCache.Load(targetSignature)
+	if ok {
+		log.Log.Infof("hit: %v %v", targetSignature, l)
+		return v.([]string), nil
+	}
+
+	endpoints := make([]string, 0)
+	for _, each := range reversedCalls {
 		// self call
 		if each == targetSignature {
 			continue
@@ -85,10 +95,13 @@ func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignat
 		if slices.Contains(l, each) {
 			continue
 		}
-		err := baseRunner.fillRelatedCases(ctx, each, result, append(l, each))
+		subEndpoints, err := baseRunner.fillRelatedCases(ctx, each, append(l, each))
 		if err != nil {
-			return err
+			return nil, err
 		}
+		endpoints = append(endpoints, subEndpoints...)
 	}
-	return nil
+	// store to cache
+	reachCache.Store(targetSignature, endpoints)
+	return endpoints, nil
 }
