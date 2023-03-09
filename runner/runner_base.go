@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"golang.org/x/exp/slices"
@@ -23,6 +24,7 @@ func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignatu
 	if err != nil {
 		return nil, err
 	}
+	log.Log.Infof("endpoint ready: %v", resultList)
 	for _, each := range resultList {
 		result[each] = nil
 	}
@@ -40,6 +42,7 @@ func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignatu
 		}
 		// it's a case
 		if slices.Contains(functionWithSignature.GetTags(), object.TagCase) {
+			log.Log.Infof("found related case: %v", functionWithSignature)
 			ret = append(ret, functionWithSignature)
 		}
 	}
@@ -70,8 +73,13 @@ func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignat
 	if err != nil {
 		return nil, err
 	}
-	// endpoint, store and return
+
+	// endpoint, return
 	reversedCalls := cur.ReverseCalls
+	if len(reversedCalls) == 0 {
+		// todo: performance is bad
+		return []string{targetSignature}, nil
+	}
 
 	// path, continue searching
 	v, ok := reachCache.Load(targetSignature)
