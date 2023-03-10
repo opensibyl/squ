@@ -11,7 +11,6 @@ import (
 )
 
 var cache sync.Map
-var reachCache sync.Map
 
 type BaseRunner struct {
 	config    *object.SharedConfig
@@ -19,14 +18,10 @@ type BaseRunner struct {
 }
 
 func (baseRunner *BaseRunner) GetRelatedCases(ctx context.Context, targetSignature string) ([]*openapi.ObjectFunctionWithSignature, error) {
-	result := make(map[string]interface{})
-	resultList, err := baseRunner.fillRelatedCases(ctx, targetSignature, make([]string, 0))
+	result := make(map[string][]string)
+	err := baseRunner.fillRelatedCases(ctx, targetSignature, result, make([]string, 0))
 	if err != nil {
 		return nil, err
-	}
-	log.Log.Infof("endpoint ready: %v", resultList)
-	for _, each := range resultList {
-		result[each] = nil
 	}
 
 	ret := make([]*openapi.ObjectFunctionWithSignature, 0)
@@ -68,42 +63,46 @@ func (baseRunner *BaseRunner) getFuncBySignature(ctx context.Context, signature 
 	}
 }
 
-func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, l []string) ([]string, error) {
+func (baseRunner *BaseRunner) fillRelatedCases(ctx context.Context, targetSignature string, endpointRecord map[string][]string, paths []string) error {
 	cur, err := baseRunner.getFuncBySignature(ctx, targetSignature)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// endpoint, return
 	reversedCalls := cur.ReverseCalls
+	newPaths := append(paths, targetSignature)
 	if len(reversedCalls) == 0 {
-		// todo: performance is bad
-		return []string{targetSignature}, nil
+		log.Log.Infof("reach endpoint: %v %v", targetSignature, newPaths)
+		endpointRecord[targetSignature] = []string{targetSignature}
+		return nil
 	}
 
-	// path, continue searching
-	v, ok := reachCache.Load(targetSignature)
-	if ok {
-		return v.([]string), nil
+	// performance issue here
+	if len(reversedCalls) > 10 {
+		log.Log.Infof("function referenced %d times, give up", len(reversedCalls))
+		return nil
 	}
 
-	endpoints := make([]string, 0)
+	// else, on path, continue searching
+	curEndpoints := make([]string, 0)
 	for _, each := range reversedCalls {
 		// self call
 		if each == targetSignature {
 			continue
 		}
-		// loop call
-		if slices.Contains(l, each) {
+		if slices.Contains(newPaths, each) {
 			continue
 		}
-		subEndpoints, err := baseRunner.fillRelatedCases(ctx, each, append(l, each))
+		err := baseRunner.fillRelatedCases(ctx, each, endpointRecord, newPaths)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		endpoints = append(endpoints, subEndpoints...)
+
+		if item, ok := endpointRecord[each]; ok {
+			curEndpoints = append(curEndpoints, item...)
+		}
 	}
-	// store to cache
-	reachCache.Store(targetSignature, endpoints)
-	return endpoints, nil
+	endpointRecord[targetSignature] = curEndpoints
+	return nil
 }

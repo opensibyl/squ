@@ -9,6 +9,8 @@ import (
 
 type Indexer interface {
 	UploadSrc(ctx context.Context) error
+	GetTagCache() CaseTagCache
+	GetSpecialCases() []string
 	// TagCases different framework should have different rules
 	TagCases(ctx context.Context) error
 }
@@ -28,6 +30,7 @@ func GetIndexer(indexerType object.IndexerType, config *object.SharedConfig) (In
 	baseIndexer := &BaseIndexer{
 		config:    config,
 		apiClient: client,
+		tagCache:  make(CaseTagCache),
 	}
 	switch indexerType {
 	case object.IndexerGolang:

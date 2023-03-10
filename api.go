@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 	"syscall"
+	"time"
 
 	"github.com/opensibyl/UnitSqueezor/extractor"
 	"github.com/opensibyl/UnitSqueezor/indexer"
@@ -51,8 +51,10 @@ func MainFlow(conf object.SharedConfig) {
 	sibylContext, cancel := context.WithCancel(rootContext)
 	defer cancel()
 
+	rootStartTime := time.Now()
+
 	// 0. start sibyl2 backend
-	sibylContext, stop := signal.NotifyContext(sibylContext, syscall.SIGINT, syscall.SIGTERM)
+	sibylContext, stop := signal.NotifyContext(rootContext, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		config := object2.DefaultExecuteConfig()
 		// for performance
@@ -89,33 +91,25 @@ func MainFlow(conf object.SharedConfig) {
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 
-	caseSet := make(map[string]*openapi.ObjectFunctionWithSignature)
+	cache := curIndexer.GetTagCache()
+	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
 	for fileName, eachFunctionList := range diffMap {
 		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
-		var wg sync.WaitGroup
-		wg.Add(len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
-			go func(f object.FunctionWithState) {
-				defer wg.Done()
-				cases, err := curRunner.GetRelatedCases(runnerContext, f.GetSignature())
-				PanicIfErr(err)
-
-				var l sync.Mutex
-				l.Lock()
-				defer l.Unlock()
-				for _, eachCase := range cases {
-					caseSet[eachCase.GetSignature()] = eachCase
+			for eachCaseSignature, eachCase := range cache {
+				log.Log.Infof("case %v influence %v", eachCaseSignature, len(eachCaseSignature))
+				if _, ok := (*eachCase)[eachFunc.GetSignature()]; ok {
+					// related case
+					log.Log.Infof("case %v related to %v", eachCaseSignature, eachFunc.GetSignature())
+				} else {
+					// not related
 				}
-			}(*eachFunc)
+			}
 		}
-		wg.Wait()
 	}
 	PanicIfErr(err)
+	log.Log.Infof("case analyzer done")
 
-	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0, len(caseSet))
-	for _, each := range caseSet {
-		casesToRun = append(casesToRun, each)
-	}
 	if conf.JsonOutput != "" {
 		o := &Output{}
 		o.DiffMap = diffMap
@@ -128,9 +122,10 @@ func MainFlow(conf object.SharedConfig) {
 
 	// shutdown sibyl2 before running cases because of its ports
 	stop()
-	log.Log.Infof("ready to run")
+	prepareTotalCost := time.Since(rootStartTime)
+	log.Log.Infof("prepare stage finished, total cost: %d ms", prepareTotalCost.Milliseconds())
 	if !conf.Dry {
-		log.Log.Infof("start running cases: %v", len(caseSet))
+		log.Log.Infof("start running cases: %v", len(casesToRun))
 		err = curRunner.Run(casesToRun, runnerContext)
 		PanicIfErr(err)
 	}
