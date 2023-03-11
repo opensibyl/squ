@@ -96,8 +96,3 @@ func (baseIndexer *BaseIndexer) TagCase(caseSignature string, ctx context.Contex
 	baseIndexer.caseSet[caseSignature] = nil
 	return nil
 }
-
-func (baseIndexer *BaseIndexer) TagCases(_ context.Context) error {
-	// TODO implement me
-	panic("implement me")
-}

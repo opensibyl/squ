@@ -8,11 +8,15 @@ import (
 	"github.com/opensibyl/sibyl2"
 )
 
-type Indexer interface {
+type BaseIndexerPart interface {
 	UploadSrc(ctx context.Context) error
 	GetCaseSet() map[string]interface{}
 	GetSibylCache() *sibyl2.FuncGraph
 	GetVertexesWithSignature(s string) []string
+}
+
+type Indexer interface {
+	BaseIndexerPart
 	// TagCases different framework should have different rules
 	TagCases(ctx context.Context) error
 }

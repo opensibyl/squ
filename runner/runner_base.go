@@ -55,7 +55,28 @@ func (baseRunner *BaseRunner) Signature2Case(ctx context.Context, s string) (*op
 	return caseObject, nil
 }
 
-func (baseRunner *BaseRunner) Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error {
-	// TODO implement me
-	panic("implement me")
+func (baseRunner *BaseRunner) Diff2Cases(ctx context.Context, diffMap object.DiffFuncMap, indexer indexer.Indexer) ([]*openapi.ObjectFunctionWithSignature, error) {
+	casesToRunRaw := make(map[string]interface{})
+	for fileName, eachFunctionList := range diffMap {
+		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
+		for _, eachFunc := range eachFunctionList {
+			cases, err := baseRunner.GetRelatedCases(ctx, eachFunc.GetSignature(), indexer)
+			if err != nil {
+				return nil, err
+			}
+			// merge
+			for k := range cases {
+				casesToRunRaw[k] = nil
+			}
+		}
+	}
+	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
+	for eachCase := range casesToRunRaw {
+		functionWithSignature, err := baseRunner.Signature2Case(ctx, eachCase)
+		if err != nil {
+			return nil, err
+		}
+		casesToRun = append(casesToRun, functionWithSignature)
+	}
+	return casesToRun, nil
 }

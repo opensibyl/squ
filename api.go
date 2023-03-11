@@ -91,27 +91,9 @@ func MainFlow(conf object.SharedConfig) {
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 
-	casesToRunRaw := make(map[string]interface{})
-	for fileName, eachFunctionList := range diffMap {
-		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
-		for _, eachFunc := range eachFunctionList {
-			cases, err := curRunner.GetRelatedCases(runnerContext, eachFunc.GetSignature(), curIndexer)
-			PanicIfErr(err)
-			// merge
-			for k := range cases {
-				casesToRunRaw[k] = nil
-			}
-		}
-	}
-	log.Log.Infof("case to run: %d", len(casesToRunRaw))
-
-	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
-	for eachCase := range casesToRunRaw {
-		functionWithSignature, err := curRunner.Signature2Case(runnerContext, eachCase)
-		PanicIfErr(err)
-		casesToRun = append(casesToRun, functionWithSignature)
-	}
-	log.Log.Infof("case analyzer done")
+	casesToRun, err := curRunner.Diff2Cases(runnerContext, diffMap, curIndexer)
+	PanicIfErr(err)
+	log.Log.Infof("case analyzer done, before: %d, after: %d", len(curIndexer.GetCaseSet()), len(casesToRun))
 
 	if conf.JsonOutput != "" {
 		o := &Output{}
