@@ -2,32 +2,44 @@ package indexer
 
 import (
 	"context"
-	"sync"
 
+	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/sibyl2"
 	"github.com/opensibyl/sibyl2/cmd/sibyl/subs/upload"
-	"golang.org/x/exp/slices"
+	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
 )
 
-var cache sync.Map
-var tagCacheLock sync.Mutex
-
-type CaseTagCache = map[string]*map[string]interface{}
-
 type BaseIndexer struct {
-	config      *object.SharedConfig
-	apiClient   *openapi.APIClient
-	tagCache    CaseTagCache
-	giveUpCases *sync.Map
+	config        *object.SharedConfig
+	apiClient     *openapi.APIClient
+	caseSet       map[string]interface{}
+	sibylCache    upload.ExecuteCacheMap
+	vertexMapping map[string]*map[string]interface{}
 }
 
-func (baseIndexer *BaseIndexer) GetTagCache() CaseTagCache {
-	return baseIndexer.tagCache
+func (baseIndexer *BaseIndexer) GetSibylCache() *sibyl2.FuncGraph {
+	var curCache *upload.ExecuteCache
+	for _, v := range baseIndexer.sibylCache {
+		// only take the first one
+		curCache = v
+		break
+	}
+	return curCache.AnalyzeGraph
 }
 
-func (baseIndexer *BaseIndexer) GetGiveUpCases() *sync.Map {
-	return baseIndexer.giveUpCases
+func (baseIndexer *BaseIndexer) GetCaseSet() map[string]interface{} {
+	return baseIndexer.caseSet
+}
+
+func (baseIndexer *BaseIndexer) GetVertexesWithSignature(s string) []string {
+	m := baseIndexer.vertexMapping[s]
+	ret := make([]string, 0, len(*m))
+	for k := range *m {
+		ret = append(ret, k)
+	}
+	return ret
 }
 
 func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
@@ -38,33 +50,36 @@ func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
 	conf.RevHash = baseIndexer.config.RepoInfo.RevHash
 
 	// todo: use ctx
-	err := upload.ExecWithConfig(conf)
+	sibylCache, err := upload.ExecCurRevWithConfig(conf.Src, &object2.WorkspaceConfig{
+		RepoId:  conf.RepoId,
+		RevHash: conf.RevHash,
+	}, conf)
 	if err != nil {
 		return err
 	}
+	baseIndexer.sibylCache = sibylCache
+	cg := baseIndexer.GetSibylCache().CallGraph
+	adjacencyMap, err := cg.AdjacencyMap()
+	if err != nil {
+		return err
+	}
+	for k := range adjacencyMap {
+		functionWithPath, _ := cg.Vertex(k)
+		signature := functionWithPath.GetSignature()
+
+		m := baseIndexer.vertexMapping[signature]
+		if m == nil {
+			newM := make(map[string]interface{})
+			baseIndexer.vertexMapping[signature] = &newM
+			m = &newM
+		}
+		(*m)[k] = nil
+	}
+	log.Log.Infof("indexer done")
 	return nil
 }
 
-func (baseIndexer *BaseIndexer) getFuncBySignature(ctx context.Context, signature string) (*openapi.Sibyl2FunctionContextSlim, error) {
-	if item, ok := cache.Load(signature); ok {
-		return item.(*openapi.Sibyl2FunctionContextSlim), nil
-	} else {
-		ret, _, err := baseIndexer.apiClient.SignatureQueryApi.
-			ApiV1SignatureFuncctxGet(ctx).
-			Repo(baseIndexer.config.RepoInfo.RepoId).
-			Rev(baseIndexer.config.RepoInfo.RevHash).
-			Signature(signature).
-			Execute()
-		if err != nil {
-			return nil, err
-		}
-		cache.Store(signature, ret)
-		return ret, nil
-	}
-}
-
 func (baseIndexer *BaseIndexer) TagCase(caseSignature string, ctx context.Context) error {
-	// if batch id changed, will recalc
 	tagCase := object.TagCase
 	repo := baseIndexer.config.RepoInfo.RepoId
 	rev := baseIndexer.config.RepoInfo.RevHash
@@ -78,66 +93,7 @@ func (baseIndexer *BaseIndexer) TagCase(caseSignature string, ctx context.Contex
 		return err
 	}
 
-	// query and store to cache
-	err = baseIndexer.fillTagCache(caseSignature, caseSignature, make([]string, 0), ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (baseIndexer *BaseIndexer) fillTagCache(caseSignature string, curSignature string, paths []string, ctx context.Context) error {
-	// already give up?
-	if _, alreadyGiveUp := baseIndexer.giveUpCases.Load(caseSignature); alreadyGiveUp {
-		return nil
-	}
-
-	functionContextSlim, err := baseIndexer.getFuncBySignature(ctx, curSignature)
-	if err != nil {
-		return err
-	}
-	calls := functionContextSlim.Calls
-	// endpoint
-	if len(calls) == 0 {
-		return nil
-	}
-
-	// avoid too large scale
-	tagCacheLock.Lock()
-	if item, ok := baseIndexer.GetTagCache()[caseSignature]; ok {
-		if len(*item) > baseIndexer.config.ScanLimit {
-			baseIndexer.GetGiveUpCases().Store(caseSignature, nil)
-			tagCacheLock.Unlock()
-			return nil
-		}
-	}
-	tagCacheLock.Unlock()
-
-	// loop
-	if slices.Contains(paths, curSignature) {
-		return nil
-	}
-
-	// accept this node
-	tagCacheLock.Lock()
-	m := baseIndexer.GetTagCache()[caseSignature]
-	if m == nil {
-		newM := make(map[string]interface{})
-		newM[curSignature] = nil
-		baseIndexer.GetTagCache()[caseSignature] = &newM
-	} else {
-		(*m)[curSignature] = nil
-	}
-	tagCacheLock.Unlock()
-
-	// go on
-	newPaths := append(paths, curSignature)
-	for _, each := range calls {
-		err := baseIndexer.fillTagCache(caseSignature, each, newPaths, ctx)
-		if err != nil {
-			return err
-		}
-	}
+	baseIndexer.caseSet[caseSignature] = nil
 	return nil
 }
 

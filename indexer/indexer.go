@@ -3,15 +3,16 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/opensibyl/UnitSqueezor/object"
+	"github.com/opensibyl/sibyl2"
 )
 
 type Indexer interface {
 	UploadSrc(ctx context.Context) error
-	GetTagCache() CaseTagCache
-	GetGiveUpCases() *sync.Map
+	GetCaseSet() map[string]interface{}
+	GetSibylCache() *sibyl2.FuncGraph
+	GetVertexesWithSignature(s string) []string
 	// TagCases different framework should have different rules
 	TagCases(ctx context.Context) error
 }
@@ -29,10 +30,10 @@ func GetIndexer(indexerType object.IndexerType, config *object.SharedConfig) (In
 	}
 
 	baseIndexer := &BaseIndexer{
-		config:      config,
-		apiClient:   client,
-		tagCache:    make(CaseTagCache),
-		giveUpCases: &sync.Map{},
+		config:        config,
+		apiClient:     client,
+		caseSet:       make(map[string]interface{}),
+		vertexMapping: make(map[string]*map[string]interface{}),
 	}
 	switch indexerType {
 	case object.IndexerGolang:

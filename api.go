@@ -91,39 +91,26 @@ func MainFlow(conf object.SharedConfig) {
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 
-	cache := curIndexer.GetTagCache()
-	caseSignaturesToRun := curIndexer.GetGiveUpCases()
-
-	giveUpNum := 0
-	caseSignaturesToRun.Range(func(_, _ any) bool {
-		giveUpNum++
-		return true
-	})
-	log.Log.Infof("give up case: %d", giveUpNum)
-
+	casesToRunRaw := make(map[string]interface{})
 	for fileName, eachFunctionList := range diffMap {
 		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
-			for eachCaseSignature, eachCase := range cache {
-				log.Log.Infof("case %v influence %v", eachCaseSignature, len(eachCaseSignature))
-				if _, ok := (*eachCase)[eachFunc.GetSignature()]; ok {
-					// related case
-					log.Log.Infof("case %v related to %v", eachCaseSignature, eachFunc.GetSignature())
-					caseSignaturesToRun.Store(eachCaseSignature, nil)
-				} else {
-					// not related
-				}
+			cases, err := curRunner.GetRelatedCases(runnerContext, eachFunc.GetSignature(), curIndexer)
+			PanicIfErr(err)
+			// merge
+			for k := range cases {
+				casesToRunRaw[k] = nil
 			}
 		}
 	}
-	casesNum := 0
-	caseSignaturesToRun.Range(func(_, _ any) bool {
-		casesNum++
-		return true
-	})
-	log.Log.Infof("case to run: %d", casesNum)
+	log.Log.Infof("case to run: %d", len(casesToRunRaw))
 
 	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
+	for eachCase := range casesToRunRaw {
+		functionWithSignature, err := curRunner.Signature2Case(runnerContext, eachCase)
+		PanicIfErr(err)
+		casesToRun = append(casesToRun, functionWithSignature)
+	}
 	log.Log.Infof("case analyzer done")
 
 	if conf.JsonOutput != "" {
