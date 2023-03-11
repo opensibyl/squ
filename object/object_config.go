@@ -36,7 +36,7 @@ func DefaultConfig() SharedConfig {
 }
 
 func (conf *SharedConfig) NewSibylClient() (*openapi.APIClient, error) {
-	parsed, err := url.Parse(conf.SibylUrl)
+	parsed, err := conf.parseSibylUrl()
 	if err != nil {
 		return nil, err
 	}
@@ -45,4 +45,20 @@ func (conf *SharedConfig) NewSibylClient() (*openapi.APIClient, error) {
 	configuration.Scheme = parsed.Scheme
 	configuration.Host = parsed.Host
 	return openapi.NewAPIClient(configuration), nil
+}
+
+func (conf *SharedConfig) LocalSibyl() bool {
+	parsed, err := conf.parseSibylUrl()
+	if err != nil {
+		return false
+	}
+	hostName := parsed.Hostname()
+	if hostName == "127.0.0.1" || hostName == "localhost" {
+		return true
+	}
+	return false
+}
+
+func (conf *SharedConfig) parseSibylUrl() (*url.URL, error) {
+	return url.Parse(conf.SibylUrl)
 }

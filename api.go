@@ -55,17 +55,23 @@ func MainFlow(conf object.SharedConfig) {
 	rootStartTime := time.Now()
 
 	// 0. start sibyl2 backend
-	go func() {
-		config := object2.DefaultExecuteConfig()
-		// for performance
-		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
-		config.EnableLog = false
-		err := server.Execute(config, rootContext)
-		PanicIfErr(err)
-	}()
-	log.Log.Infof("sibyl2 backend ready")
+	if conf.LocalSibyl() {
+		log.Log.Infof("using local sibyl, starting ...")
+		go func() {
+			config := object2.DefaultExecuteConfig()
+			// for performance
+			config.BindingConfigPart.DbType = object2.DriverTypeInMemory
+			config.EnableLog = false
+			err := server.Execute(config, rootContext)
+			PanicIfErr(err)
+		}()
+		log.Log.Infof("sibyl2 backend ready")
+	} else {
+		log.Log.Infof("using remote sibyl, skip starting server")
+	}
 
 	// 1. index
+	// todo: if using remote sibyl server, pull data directly
 	curIndexer, err := indexer.GetIndexer(conf.IndexerType, &conf)
 	err = curIndexer.UploadSrc(rootContext)
 	PanicIfErr(err)
@@ -107,7 +113,10 @@ func MainFlow(conf object.SharedConfig) {
 
 	prepareTotalCost := time.Since(rootStartTime)
 	log.Log.Infof("prepare stage finished, total cost: %d ms", prepareTotalCost.Milliseconds())
-	if !conf.Dry {
+	if conf.Dry {
+		cmd := curRunner.GetRunCommand(casesToRun)
+		log.Log.Infof("runner cmd: %v", cmd)
+	} else {
 		log.Log.Infof("start running cases: %v", len(casesToRun))
 		err = curRunner.Run(casesToRun, rootContext)
 		PanicIfErr(err)

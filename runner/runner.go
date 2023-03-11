@@ -9,6 +9,7 @@ import (
 )
 
 type Runner interface {
+	GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string
 	Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error
 }
 

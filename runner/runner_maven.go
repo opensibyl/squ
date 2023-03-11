@@ -1,8 +1,8 @@
 package runner
 
 import (
-	"context"
 	"fmt"
+	"strings"
 
 	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/opensibyl/UnitSqueezor/object"
@@ -13,23 +13,29 @@ type MavenRunner struct {
 	*BaseRunner
 }
 
-func (m *MavenRunner) Run(cases []*openapi.ObjectFunctionWithSignature, _ context.Context) error {
+func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string {
 	// mvn test -Dtest="TheSecondUnitTest#whenTestCase2_thenPrintTest2_1"
 	parts := make([]string, 0, len(cases))
 	for _, each := range cases {
 		extras := each.GetExtras()
 		log.Log.Infof("map: %v", extras)
 
-		clazzName, clazzNameExisted := extras["className"].(string)
-		if !clazzNameExisted {
+		clazzInfo, existed := extras["classInfo"].(map[string]interface{})
+		if !existed {
+			log.Log.Warnf("class info not found in: %v", each.GetName())
+			continue
+		}
+		clazzName, nameExisted := clazzInfo["className"].(string)
+		if !nameExisted {
 			log.Log.Warnf("class name not found in: %v", each.GetName())
 			continue
 		}
+
 		curPartStr := fmt.Sprintf("%s#%s", clazzName, each.GetName())
 		parts = append(parts, curPartStr)
 	}
-	log.Log.Infof("%v", parts)
-	return nil
+	joined := strings.Join(parts, ",")
+	return []string{"mvn", "test", "-Dtest=" + joined}
 }
 
 func NewMavenRunner(conf *object.SharedConfig) (Runner, error) {
