@@ -11,23 +11,23 @@ import (
 )
 
 var cache sync.Map
-var l sync.Mutex
+var tagCacheLock sync.Mutex
 
 type CaseTagCache = map[string]*map[string]interface{}
 
 type BaseIndexer struct {
-	config       *object.SharedConfig
-	apiClient    *openapi.APIClient
-	tagCache     CaseTagCache
-	specialCases []string
+	config      *object.SharedConfig
+	apiClient   *openapi.APIClient
+	tagCache    CaseTagCache
+	giveUpCases *sync.Map
 }
 
 func (baseIndexer *BaseIndexer) GetTagCache() CaseTagCache {
 	return baseIndexer.tagCache
 }
 
-func (baseIndexer *BaseIndexer) GetSpecialCases() []string {
-	return baseIndexer.specialCases
+func (baseIndexer *BaseIndexer) GetGiveUpCases() *sync.Map {
+	return baseIndexer.giveUpCases
 }
 
 func (baseIndexer *BaseIndexer) UploadSrc(_ context.Context) error {
@@ -79,60 +79,66 @@ func (baseIndexer *BaseIndexer) TagCase(caseSignature string, ctx context.Contex
 	}
 
 	// query and store to cache
-	_, err = baseIndexer.fillTagCache(caseSignature, caseSignature, make([]string, 0), ctx)
+	err = baseIndexer.fillTagCache(caseSignature, caseSignature, make([]string, 0), ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (baseIndexer *BaseIndexer) fillTagCache(caseSignature string, curSignature string, paths []string, ctx context.Context) (bool, error) {
+func (baseIndexer *BaseIndexer) fillTagCache(caseSignature string, curSignature string, paths []string, ctx context.Context) error {
+	// already give up?
+	if _, alreadyGiveUp := baseIndexer.giveUpCases.Load(caseSignature); alreadyGiveUp {
+		return nil
+	}
+
 	functionContextSlim, err := baseIndexer.getFuncBySignature(ctx, curSignature)
 	if err != nil {
-		return false, err
+		return err
 	}
 	calls := functionContextSlim.Calls
-	// end
+	// endpoint
 	if len(calls) == 0 {
-		return true, nil
+		return nil
 	}
+
 	// avoid too large scale
-	if item, ok := baseIndexer.tagCache[caseSignature]; ok {
-		if len(*item) > 128 {
-			baseIndexer.specialCases = append(baseIndexer.specialCases, caseSignature)
-			return false, nil
+	tagCacheLock.Lock()
+	if item, ok := baseIndexer.GetTagCache()[caseSignature]; ok {
+		if len(*item) > baseIndexer.config.ScanLimit {
+			baseIndexer.GetGiveUpCases().Store(caseSignature, nil)
+			tagCacheLock.Unlock()
+			return nil
 		}
 	}
+	tagCacheLock.Unlock()
 
 	// loop
 	if slices.Contains(paths, curSignature) {
-		return true, nil
+		return nil
 	}
 
 	// accept this node
-	l.Lock()
-	m := baseIndexer.tagCache[caseSignature]
+	tagCacheLock.Lock()
+	m := baseIndexer.GetTagCache()[caseSignature]
 	if m == nil {
 		newM := make(map[string]interface{})
 		newM[curSignature] = nil
-		baseIndexer.tagCache[caseSignature] = &newM
+		baseIndexer.GetTagCache()[caseSignature] = &newM
 	} else {
 		(*m)[curSignature] = nil
 	}
-	l.Unlock()
+	tagCacheLock.Unlock()
 
 	// go on
 	newPaths := append(paths, curSignature)
 	for _, each := range calls {
-		needContinue, err := baseIndexer.fillTagCache(caseSignature, each, newPaths, ctx)
+		err := baseIndexer.fillTagCache(caseSignature, each, newPaths, ctx)
 		if err != nil {
-			return false, err
-		}
-		if !needContinue {
-			return false, nil
+			return err
 		}
 	}
-	return true, nil
+	return nil
 }
 
 func (baseIndexer *BaseIndexer) TagCases(_ context.Context) error {

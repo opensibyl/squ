@@ -92,7 +92,15 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 
 	cache := curIndexer.GetTagCache()
-	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
+	caseSignaturesToRun := curIndexer.GetGiveUpCases()
+
+	giveUpNum := 0
+	caseSignaturesToRun.Range(func(_, _ any) bool {
+		giveUpNum++
+		return true
+	})
+	log.Log.Infof("give up case: %d", giveUpNum)
+
 	for fileName, eachFunctionList := range diffMap {
 		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
@@ -101,13 +109,21 @@ func MainFlow(conf object.SharedConfig) {
 				if _, ok := (*eachCase)[eachFunc.GetSignature()]; ok {
 					// related case
 					log.Log.Infof("case %v related to %v", eachCaseSignature, eachFunc.GetSignature())
+					caseSignaturesToRun.Store(eachCaseSignature, nil)
 				} else {
 					// not related
 				}
 			}
 		}
 	}
-	PanicIfErr(err)
+	casesNum := 0
+	caseSignaturesToRun.Range(func(_, _ any) bool {
+		casesNum++
+		return true
+	})
+	log.Log.Infof("case to run: %d", casesNum)
+
+	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
 	log.Log.Infof("case analyzer done")
 
 	if conf.JsonOutput != "" {

@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 
+	"github.com/opensibyl/UnitSqueezor/log"
 	"github.com/xxjwxc/gowp/workpool"
 )
 
@@ -26,10 +27,13 @@ func (j *JavaJunitIndexer) TagCases(ctx context.Context) error {
 	}
 
 	// tag cases
+	log.Log.Infof("total cases we found: %d", len(functionWithPaths))
 	wp := workpool.New(4)
 	for _, each := range functionWithPaths {
+		signature := each.GetSignature()
 		wp.Do(func() error {
-			err := j.TagCase(each.GetSignature(), ctx)
+			log.Log.Infof("tag case: %s", signature)
+			err := j.TagCase(signature, ctx)
 			if err != nil {
 				return err
 			}
