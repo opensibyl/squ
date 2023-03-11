@@ -13,7 +13,7 @@ type MavenRunner struct {
 	*BaseRunner
 }
 
-func (m *MavenRunner) Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error {
+func (m *MavenRunner) Run(cases []*openapi.ObjectFunctionWithSignature, _ context.Context) error {
 	// mvn test -Dtest="TheSecondUnitTest#whenTestCase2_thenPrintTest2_1"
 	parts := make([]string, 0, len(cases))
 	for _, each := range cases {

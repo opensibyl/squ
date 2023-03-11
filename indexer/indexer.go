@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/opensibyl/UnitSqueezor/object"
+	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2"
 )
 
@@ -13,6 +14,7 @@ type BaseIndexerPart interface {
 	GetCaseSet() map[string]interface{}
 	GetSibylCache() *sibyl2.FuncGraph
 	GetVertexesWithSignature(s string) []string
+	GetFuncWithSignature(ctx context.Context, s string) (*openapi.ObjectFunctionWithSignature, error)
 }
 
 type Indexer interface {

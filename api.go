@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/opensibyl/UnitSqueezor/extractor"
 	"github.com/opensibyl/UnitSqueezor/indexer"
 	"github.com/opensibyl/UnitSqueezor/log"
+	"github.com/opensibyl/UnitSqueezor/mapper"
 	"github.com/opensibyl/UnitSqueezor/object"
 	"github.com/opensibyl/UnitSqueezor/runner"
 	openapi "github.com/opensibyl/sibyl-go-client"
@@ -20,15 +19,17 @@ import (
 )
 
 /*
-index
+index (preparation)
 1. upload all the files to sibyl2
 2. search and tag all the test methods
 3. calc and tag all the test methods influencing scope
 
-extract
+extract (extract data from workspace)
 1. calc diff between current and previous
 2. find methods influenced by diff
-3. search related cases
+
+mapper (mapping between cases and diff)
+1. search related cases
 
 runner (can be implemented by different languages)
 1. build test commands for different frameworks
@@ -48,33 +49,31 @@ func MainFlow(conf object.SharedConfig) {
 	conf.SrcDir = absSrcDir
 
 	rootContext := context.Background()
-	sibylContext, cancel := context.WithCancel(rootContext)
+	rootContext, cancel := context.WithCancel(rootContext)
 	defer cancel()
 
 	rootStartTime := time.Now()
 
 	// 0. start sibyl2 backend
-	sibylContext, stop := signal.NotifyContext(rootContext, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		config := object2.DefaultExecuteConfig()
 		// for performance
 		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
 		config.EnableLog = false
-		err := server.Execute(config, sibylContext)
+		err := server.Execute(config, rootContext)
 		PanicIfErr(err)
 	}()
-	defer stop()
 	log.Log.Infof("sibyl2 backend ready")
 
-	// 1. upload and tag
+	// 1. index
 	curIndexer, err := indexer.GetIndexer(conf.IndexerType, &conf)
-	err = curIndexer.UploadSrc(sibylContext)
+	err = curIndexer.UploadSrc(rootContext)
 	PanicIfErr(err)
-	err = curIndexer.TagCases(sibylContext)
+	err = curIndexer.TagCases(rootContext)
 	PanicIfErr(err)
 	log.Log.Infof("indexer ready")
 
-	// 2. calc
+	// 2. extract
 	// line level diff
 	calcContext, cancel := context.WithCancel(rootContext)
 	defer cancel()
@@ -84,14 +83,10 @@ func MainFlow(conf object.SharedConfig) {
 	PanicIfErr(err)
 	log.Log.Infof("diff calc ready: %v", len(diffMap))
 
-	// 3. runner
-	log.Log.Infof("runner scope")
-	runnerContext, cancel := context.WithCancel(rootContext)
-	defer cancel()
-	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
-	PanicIfErr(err)
-
-	casesToRun, err := curRunner.Diff2Cases(runnerContext, diffMap, curIndexer)
+	// 3. mapper
+	curMapper := mapper.NewMapper()
+	curMapper.SetIndexer(curIndexer)
+	casesToRun, err := curMapper.Diff2Cases(rootContext, diffMap)
 	PanicIfErr(err)
 	log.Log.Infof("case analyzer done, before: %d, after: %d", len(curIndexer.GetCaseSet()), len(casesToRun))
 
@@ -105,13 +100,16 @@ func MainFlow(conf object.SharedConfig) {
 		PanicIfErr(err)
 	}
 
-	// shutdown sibyl2 before running cases because of its ports
-	stop()
+	// 4. runner
+	log.Log.Infof("runner scope")
+	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
+	PanicIfErr(err)
+
 	prepareTotalCost := time.Since(rootStartTime)
 	log.Log.Infof("prepare stage finished, total cost: %d ms", prepareTotalCost.Milliseconds())
 	if !conf.Dry {
 		log.Log.Infof("start running cases: %v", len(casesToRun))
-		err = curRunner.Run(casesToRun, runnerContext)
+		err = curRunner.Run(casesToRun, rootContext)
 		PanicIfErr(err)
 	}
 }

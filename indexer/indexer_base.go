@@ -96,3 +96,16 @@ func (baseIndexer *BaseIndexer) TagCase(caseSignature string, ctx context.Contex
 	baseIndexer.caseSet[caseSignature] = nil
 	return nil
 }
+
+func (baseIndexer *BaseIndexer) GetFuncWithSignature(ctx context.Context, s string) (*openapi.ObjectFunctionWithSignature, error) {
+	caseObject, _, err := baseIndexer.apiClient.SignatureQueryApi.
+		ApiV1SignatureFuncGet(ctx).
+		Repo(baseIndexer.config.RepoInfo.RepoId).
+		Rev(baseIndexer.config.RepoInfo.RevHash).
+		Signature(s).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	return caseObject, nil
+}

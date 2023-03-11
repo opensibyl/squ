@@ -18,7 +18,6 @@ type SharedConfig struct {
 	Dry         bool        `json:"dry"`
 	IndexerType IndexerType `json:"indexerType"`
 	RunnerType  RunnerType  `json:"runnerType"`
-	ScanLimit   int         `json:"scanLimit"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -33,7 +32,6 @@ func DefaultConfig() SharedConfig {
 		false,
 		IndexerGolang,
 		RunnerGolang,
-		128,
 	}
 }
 
