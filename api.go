@@ -15,6 +15,7 @@
 package squ
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -22,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dominikbraun/graph/draw"
+	"github.com/goccy/go-graphviz"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/pkg/server"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
@@ -123,11 +126,24 @@ func MainFlow(conf object.SharedConfig) {
 		err = os.WriteFile(conf.JsonOutput, diffFuncOutputBytes, os.ModePerm)
 		PanicIfErr(err)
 	}
+	if conf.GraphOutput != "" {
+		buf := bytes.NewBuffer([]byte{})
+		err = draw.DOT(curIndexer.GetSibylCache().CallGraph.Graph, buf)
+		PanicIfErr(err)
+
+		// todo: node attr should be applied here
+		g, err := graphviz.ParseBytes(buf.Bytes())
+		PanicIfErr(err)
+		gviz := graphviz.New()
+		err = gviz.RenderFilename(g, graphviz.Format(graphviz.DOT), conf.GraphOutput)
+		PanicIfErr(err)
+	}
 
 	// 4. runner
 	log.Log.Infof("runner scope")
 	if len(casesToRun) == 0 {
 		log.Log.Infof("no cases need to run")
+		return
 	}
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)

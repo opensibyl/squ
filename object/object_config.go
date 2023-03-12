@@ -15,6 +15,7 @@ type SharedConfig struct {
 	Before      string      `json:"before"`
 	After       string      `json:"after"`
 	JsonOutput  string      `json:"jsonOutput"`
+	GraphOutput string      `json:"svgOutput"`
 	Dry         bool        `json:"dry"`
 	IndexerType IndexerType `json:"indexerType"`
 	RunnerType  RunnerType  `json:"runnerType"`
@@ -29,6 +30,7 @@ func DefaultConfig() SharedConfig {
 		int(time.Now().UnixMicro()),
 		"HEAD~1",
 		"HEAD",
+		"",
 		"",
 		false,
 		IndexerGolang,

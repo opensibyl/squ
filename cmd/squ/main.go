@@ -22,6 +22,7 @@ func main() {
 	before := flag.String("before", "HEAD~1", "before rev")
 	after := flag.String("after", "HEAD", "after rev")
 	diffOutput := flag.String("jsonOutput", "", "diff output")
+	graphOutput := flag.String("graphOutput", "", "svg output")
 	dry := flag.Bool("dry", false, "dry")
 	indexerType := flag.String("indexer", object.IndexerGolang, "indexer type")
 	runnerType := flag.String("runner", object.RunnerGolang, "runner type")
@@ -42,6 +43,7 @@ func main() {
 	config.Before = *before
 	config.After = *after
 	config.JsonOutput = *diffOutput
+	config.GraphOutput = *graphOutput
 	config.Dry = *dry
 	config.IndexerType = *indexerType
 	config.RunnerType = *runnerType
