@@ -122,17 +122,19 @@ func MainFlow(conf object.SharedConfig) {
 
 	// 4. runner
 	log.Log.Infof("runner scope")
+	if len(casesToRun) == 0 {
+		log.Log.Infof("no cases need to run")
+	}
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
 
 	prepareTotalCost := time.Since(rootStartTime)
 	log.Log.Infof("prepare stage finished, total cost: %d ms", prepareTotalCost.Milliseconds())
-	if conf.Dry {
-		cmd := curRunner.GetRunCommand(casesToRun)
-		log.Log.Infof("runner cmd: %v", cmd)
-	} else {
+	cmd := curRunner.GetRunCommand(casesToRun)
+	log.Log.Infof("runner cmd: %v", cmd)
+	if !conf.Dry {
 		log.Log.Infof("start running cases: %v", len(casesToRun))
-		err = curRunner.Run(casesToRun, rootContext)
+		err = curRunner.Run(cmd, rootContext)
 		PanicIfErr(err)
 	}
 }

@@ -25,17 +25,22 @@ func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature
 			log.Log.Warnf("class info not found in: %v", each.GetName())
 			continue
 		}
+		packageName, packageExisted := clazzInfo["packageName"].(string)
+		if !packageExisted {
+			log.Log.Warnf("package name not found in: %v", each.GetName())
+			continue
+		}
 		clazzName, nameExisted := clazzInfo["className"].(string)
 		if !nameExisted {
 			log.Log.Warnf("class name not found in: %v", each.GetName())
 			continue
 		}
 
-		curPartStr := fmt.Sprintf("%s#%s", clazzName, each.GetName())
+		curPartStr := fmt.Sprintf("%s#%s", fmt.Sprintf("%s.%s", packageName, clazzName), each.GetName())
 		parts = append(parts, curPartStr)
 	}
 	joined := strings.Join(parts, ",")
-	return []string{"mvn", "test", "-Dtest=" + joined}
+	return []string{"mvn", "test", "-Dtest=" + joined, "-DfailIfNoTests=false"}
 }
 
 func NewMavenRunner(conf *object.SharedConfig) (Runner, error) {

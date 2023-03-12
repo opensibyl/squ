@@ -14,14 +14,8 @@ type BaseRunner struct {
 	apiClient *openapi.APIClient
 }
 
-func (b *BaseRunner) GetRunCommand(_ []*openapi.ObjectFunctionWithSignature) []string {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (b *BaseRunner) Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error {
-	cmd := b.GetRunCommand(cases)
-	realCmd := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
+func (b *BaseRunner) Run(command []string, ctx context.Context) error {
+	realCmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	realCmd.Dir = b.config.SrcDir
 	realCmd.Stdout = os.Stdout
 	realCmd.Stderr = os.Stderr

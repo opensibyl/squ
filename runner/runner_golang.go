@@ -32,5 +32,5 @@ func (g *GoRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) [
 		execCmdList = append(execCmdList, fmt.Sprintf("^%s$", each.GetName()))
 	}
 	caseRegex := strings.Join(execCmdList, "|")
-	return []string{"go", "test", "--run", caseRegex, "-v"}
+	return []string{"go", "test", "./...", "--run", fmt.Sprintf("\"%s\"", caseRegex), "-v"}
 }

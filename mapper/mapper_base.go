@@ -20,7 +20,10 @@ func (baseMapper *BaseMapper) SetIndexer(i indexer.Indexer) {
 
 func (baseMapper *BaseMapper) GetRelatedCaseSignatures(_ context.Context, targetSignature string) (map[string]interface{}, error) {
 	g := baseMapper.indexerRef.GetSibylCache().ReverseCallGraph
+
+	// all the vertexes related to this signature
 	vertexes := baseMapper.indexerRef.GetVertexesWithSignature(targetSignature)
+
 	caseSet := baseMapper.indexerRef.GetCaseSet()
 	matchedCases := make(map[string]interface{}, 0)
 	for _, eachV := range vertexes {
@@ -41,7 +44,9 @@ func (baseMapper *BaseMapper) GetRelatedCaseSignatures(_ context.Context, target
 			return nil, err
 		}
 	}
-	log.Log.Infof("cases related to %v: %d", targetSignature, len(matchedCases))
+	if len(matchedCases) == 0 {
+		log.Log.Warnf("no cases related to %v", targetSignature)
+	}
 	return matchedCases, nil
 }
 

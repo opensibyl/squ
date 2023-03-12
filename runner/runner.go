@@ -8,9 +8,13 @@ import (
 	"github.com/opensibyl/squ/object"
 )
 
+type BaseRunnerPart interface {
+	Run(command []string, ctx context.Context) error
+}
+
 type Runner interface {
+	BaseRunnerPart
 	GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string
-	Run(cases []*openapi.ObjectFunctionWithSignature, ctx context.Context) error
 }
 
 func GetRunner(runnerType object.RunnerType, conf object.SharedConfig) (Runner, error) {
