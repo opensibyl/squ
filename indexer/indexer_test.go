@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"testing"
 
@@ -14,6 +15,9 @@ import (
 )
 
 func TestIndexerBase(t *testing.T) {
+	conf := object.DefaultConfig()
+	conf.SrcDir = "../"
+
 	ctx := context.Background()
 	sibylContext, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -21,14 +25,15 @@ func TestIndexerBase(t *testing.T) {
 		// for performance
 		config.BindingConfigPart.DbType = object2.DriverTypeInMemory
 		config.EnableLog = false
-		err := server.Execute(config, sibylContext)
+		p, err := strconv.Atoi(conf.GetSibylPort())
+		assert.Nil(t, err)
+		config.Port = p
+		err = server.Execute(config, sibylContext)
 		assert.Nil(t, err)
 	}()
 	defer stop()
 	log.Log.Infof("sibyl2 backend ready")
 
-	conf := object.DefaultConfig()
-	conf.SrcDir = "../"
 	curIndexer, err := GetIndexer(object.IndexerGolang, &conf)
 
 	assert.Nil(t, err)

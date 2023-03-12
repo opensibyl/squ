@@ -30,6 +30,7 @@ func (baseMapper *BaseMapper) GetRelatedCaseSignatures(_ context.Context, target
 		err := graph.BFS(g.Graph, eachV, func(k string) bool {
 			functionWithPath, err := g.Graph.Vertex(k)
 			if err != nil {
+				log.Log.Warnf("access %v failed: %v", k, err)
 				return true
 			}
 			s := functionWithPath.GetSignature()

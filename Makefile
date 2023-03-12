@@ -5,8 +5,11 @@ WORKDIR = $(PWD)
 GOCMD = go
 GOTEST = $(GOCMD) test
 
-build_all:
-	${GOCMD} build ./cmd/squ
+build_macos:
+	GOOS=darwin GOARCH=amd64 ${GOCMD} build -o squ_macos ./cmd/squ
 
-test:
-	$(GOTEST) ./...
+build_linux:
+	GOOS=linux GOARCH=amd64 ${GOCMD} build -o squ_linux ./cmd/squ
+
+build_windows:
+	GOOS=windows GOARCH=amd64 ${GOCMD} build -o squ_windows.exe ./cmd/squ
