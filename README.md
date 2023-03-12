@@ -1,2 +1,1 @@
-# UnitSqueezer
- 
+# squ (eezer)

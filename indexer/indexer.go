@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2"
+	"github.com/opensibyl/squ/object"
 )
 
 type BaseIndexerPart interface {

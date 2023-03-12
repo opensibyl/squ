@@ -6,10 +6,10 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/opensibyl/UnitSqueezor/log"
-	"github.com/opensibyl/UnitSqueezor/object"
 	"github.com/opensibyl/sibyl2/pkg/server"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
+	"github.com/opensibyl/squ/log"
+	"github.com/opensibyl/squ/object"
 	"github.com/stretchr/testify/assert"
 )
 

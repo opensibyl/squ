@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/opensibyl/UnitSqueezor/log"
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/squ/log"
+	"github.com/opensibyl/squ/object"
 )
 
 type MavenRunner struct {

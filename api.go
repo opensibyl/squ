@@ -1,4 +1,4 @@
-package UnitSqueezer
+package squ
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/opensibyl/UnitSqueezor/extractor"
-	"github.com/opensibyl/UnitSqueezor/indexer"
-	"github.com/opensibyl/UnitSqueezor/log"
-	"github.com/opensibyl/UnitSqueezor/mapper"
-	"github.com/opensibyl/UnitSqueezor/object"
-	"github.com/opensibyl/UnitSqueezor/runner"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/pkg/server"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
+	"github.com/opensibyl/squ/extractor"
+	"github.com/opensibyl/squ/indexer"
+	"github.com/opensibyl/squ/log"
+	"github.com/opensibyl/squ/mapper"
+	"github.com/opensibyl/squ/object"
+	"github.com/opensibyl/squ/runner"
 )
 
 /*

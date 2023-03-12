@@ -3,7 +3,7 @@ package extractor
 import (
 	"context"
 
-	"github.com/opensibyl/UnitSqueezor/object"
+	"github.com/opensibyl/squ/object"
 )
 
 type DiffExtractor interface {

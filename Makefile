@@ -6,7 +6,7 @@ GOCMD = go
 GOTEST = $(GOCMD) test
 
 build_all:
-	${GOCMD} build ./cmd/squeezer
+	${GOCMD} build ./cmd/squ
 
 test:
 	$(GOTEST) ./...

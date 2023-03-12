@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/dominikbraun/graph"
-	"github.com/opensibyl/UnitSqueezor/indexer"
-	"github.com/opensibyl/UnitSqueezor/log"
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/squ/indexer"
+	"github.com/opensibyl/squ/log"
+	"github.com/opensibyl/squ/object"
 )
 
 type BaseMapper struct {

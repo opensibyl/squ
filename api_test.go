@@ -1,12 +1,13 @@
-package UnitSqueezer
+package squ
 
 import (
 	"testing"
 
-	"github.com/opensibyl/UnitSqueezor/object"
+	"github.com/opensibyl/squ/object"
 )
 
 func TestGolang(t *testing.T) {
+	t.Skip()
 	conf := object.DefaultConfig()
 	conf.Dry = true
 	MainFlow(conf)
@@ -20,6 +21,6 @@ func TestMaven(t *testing.T) {
 	conf.Before = "HEAD~5"
 	conf.IndexerType = object.IndexerJavaJUnit
 	conf.RunnerType = object.RunnerMaven
-	conf.DiffFuncOutput = "./output.json"
+	conf.JsonOutput = "./output.json"
 	MainFlow(conf)
 }

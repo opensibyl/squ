@@ -3,12 +3,12 @@ package indexer
 import (
 	"context"
 
-	"github.com/opensibyl/UnitSqueezor/log"
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2"
 	"github.com/opensibyl/sibyl2/cmd/sibyl/subs/upload"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
+	"github.com/opensibyl/squ/log"
+	"github.com/opensibyl/squ/object"
 )
 
 type BaseIndexer struct {

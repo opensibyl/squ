@@ -1,4 +1,4 @@
-module github.com/opensibyl/UnitSqueezor
+module github.com/opensibyl/squ
 
 go 1.19
 
@@ -6,7 +6,7 @@ require (
 	github.com/dominikbraun/graph v0.16.1
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/opensibyl/sibyl-go-client v0.0.0-20230220171743-447d73d05385
-	github.com/opensibyl/sibyl2 v0.15.4-0.20230308162203-e17318c214c5
+	github.com/opensibyl/sibyl2 v0.15.4-0.20230311084243-719b5d64f1d2
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
 )
@@ -119,9 +119,9 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.5 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/exp v0.0.0-20230306221820-f0f767cdffd6 // indirect
+	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
@@ -139,5 +139,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/opensibyl/sibyl2 => ../sibyl2

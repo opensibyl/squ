@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 
-	UnitSqueezer "github.com/opensibyl/UnitSqueezor"
-	"github.com/opensibyl/UnitSqueezor/object"
+	"github.com/opensibyl/squ"
+	"github.com/opensibyl/squ/object"
 )
 
 func main() {
@@ -27,5 +27,5 @@ func main() {
 	config.IndexerType = *indexerType
 	config.RunnerType = *runnerType
 
-	UnitSqueezer.MainFlow(config)
+	squ.MainFlow(config)
 }

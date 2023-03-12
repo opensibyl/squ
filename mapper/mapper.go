@@ -3,9 +3,9 @@ package mapper
 import (
 	"context"
 
-	"github.com/opensibyl/UnitSqueezor/indexer"
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/squ/indexer"
+	"github.com/opensibyl/squ/object"
 )
 
 type Mapper interface {

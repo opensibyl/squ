@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/opensibyl/UnitSqueezor/object"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/squ/object"
 )
 
 type BaseRunner struct {
