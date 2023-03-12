@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	openapi "github.com/opensibyl/sibyl-go-client"
@@ -71,11 +72,14 @@ func MainFlow(conf object.SharedConfig) {
 	// 0. start sibyl2 backend
 	if conf.LocalSibyl() {
 		log.Log.Infof("using local sibyl, starting ...")
+		portNum, err := strconv.Atoi(conf.GetSibylPort())
+		PanicIfErr(err)
 		go func() {
 			config := object2.DefaultExecuteConfig()
 			// for performance
 			config.BindingConfigPart.DbType = object2.DriverTypeInMemory
 			config.EnableLog = false
+			config.Port = portNum
 			err := server.Execute(config, rootContext)
 			PanicIfErr(err)
 		}()
@@ -134,8 +138,7 @@ func MainFlow(conf object.SharedConfig) {
 	log.Log.Infof("runner cmd: %v", cmd)
 	if !conf.Dry {
 		log.Log.Infof("start running cases: %v", len(casesToRun))
-		err = curRunner.Run(cmd, rootContext)
-		PanicIfErr(err)
+		_ = curRunner.Run(cmd, rootContext)
 	}
 }
 

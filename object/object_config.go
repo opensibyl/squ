@@ -18,13 +18,14 @@ type SharedConfig struct {
 	Dry         bool        `json:"dry"`
 	IndexerType IndexerType `json:"indexerType"`
 	RunnerType  RunnerType  `json:"runnerType"`
+	CmdTemplate string      `json:"cmdTemplate"`
 }
 
 func DefaultConfig() SharedConfig {
 	return SharedConfig{
 		".",
 		nil,
-		"http://127.0.0.1:9876",
+		"http://127.0.0.1:9875",
 		int(time.Now().UnixMicro()),
 		"HEAD~1",
 		"HEAD",
@@ -32,6 +33,7 @@ func DefaultConfig() SharedConfig {
 		false,
 		IndexerGolang,
 		RunnerGolang,
+		"",
 	}
 }
 
@@ -57,6 +59,14 @@ func (conf *SharedConfig) LocalSibyl() bool {
 		return true
 	}
 	return false
+}
+
+func (conf *SharedConfig) GetSibylPort() string {
+	parsed, err := conf.parseSibylUrl()
+	if err != nil {
+		return ""
+	}
+	return parsed.Port()
 }
 
 func (conf *SharedConfig) parseSibylUrl() (*url.URL, error) {

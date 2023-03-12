@@ -40,7 +40,13 @@ func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature
 		parts = append(parts, curPartStr)
 	}
 	joined := strings.Join(parts, ",")
-	return []string{"mvn", "test", "-Dtest=" + joined, "-DfailIfNoTests=false"}
+	testCmd := "-Dtest=" + joined
+	if m.config.CmdTemplate != "" {
+		s := fmt.Sprintf(m.config.CmdTemplate, testCmd)
+		return strings.Split(s, " ")
+	}
+	// default commands
+	return []string{"mvn", "test", "-DfailIfNoTests=false", testCmd}
 }
 
 func NewMavenRunner(conf *object.SharedConfig) (Runner, error) {

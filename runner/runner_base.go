@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/squ/log"
 	"github.com/opensibyl/squ/object"
 )
 
@@ -21,6 +22,7 @@ func (b *BaseRunner) Run(command []string, ctx context.Context) error {
 	realCmd.Stderr = os.Stderr
 	err := realCmd.Run()
 	if err != nil {
+		log.Log.Infof("command run failed: %v", err)
 		return err
 	}
 	return nil

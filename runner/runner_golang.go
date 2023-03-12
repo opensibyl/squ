@@ -32,5 +32,12 @@ func (g *GoRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) [
 		execCmdList = append(execCmdList, fmt.Sprintf("^%s$", each.GetName()))
 	}
 	caseRegex := strings.Join(execCmdList, "|")
-	return []string{"go", "test", "./...", "--run", fmt.Sprintf("\"%s\"", caseRegex), "-v"}
+	finalCaseStr := fmt.Sprintf("--run=\"%s\"", caseRegex)
+
+	if g.config.CmdTemplate != "" {
+		s := fmt.Sprintf(g.config.CmdTemplate, finalCaseStr)
+		return strings.Split(s, " ")
+	}
+	// default commands
+	return []string{"go", "test", "./...", "-v", finalCaseStr}
 }

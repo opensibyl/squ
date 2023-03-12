@@ -7,7 +7,6 @@ import (
 )
 
 func TestGolang(t *testing.T) {
-	t.Skip()
 	conf := object.DefaultConfig()
 	conf.Dry = true
 	MainFlow(conf)
