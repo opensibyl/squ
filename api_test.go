@@ -9,7 +9,7 @@ import (
 func TestGolang(t *testing.T) {
 	conf := object.DefaultConfig()
 	conf.Dry = true
-	conf.GraphOutput = "abc.txt"
+	conf.GraphOutput = "abc.png"
 	MainFlow(conf)
 }
 
