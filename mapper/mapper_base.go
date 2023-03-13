@@ -52,7 +52,7 @@ func (baseMapper *BaseMapper) GetRelatedCaseSignatures(_ context.Context, target
 }
 
 func (baseMapper *BaseMapper) Diff2Cases(ctx context.Context, diffMap object.DiffFuncMap) ([]*openapi.ObjectFunctionWithSignature, error) {
-	casesToRunRaw := make(map[string]interface{})
+	caseSetToRun := make(map[string]interface{})
 	for fileName, eachFunctionList := range diffMap {
 		log.Log.Infof("handle modified file: %s, functions: %d", fileName, len(eachFunctionList))
 		for _, eachFunc := range eachFunctionList {
@@ -60,14 +60,23 @@ func (baseMapper *BaseMapper) Diff2Cases(ctx context.Context, diffMap object.Dif
 			if err != nil {
 				return nil, err
 			}
-			// merge
+			// no cases can reach
+			if len(cases) == 0 {
+				eachFunc.Reachable = false
+			} else {
+				eachFunc.Reachable = true
+			}
+
 			for k := range cases {
-				casesToRunRaw[k] = nil
+				// merge
+				caseSetToRun[k] = nil
+				// record
+				eachFunc.ReachBy = append(eachFunc.ReachBy, k)
 			}
 		}
 	}
 	casesToRun := make([]*openapi.ObjectFunctionWithSignature, 0)
-	for eachCase := range casesToRunRaw {
+	for eachCase := range caseSetToRun {
 		functionWithSignature, err := baseMapper.indexerRef.GetFuncWithSignature(ctx, eachCase)
 		if err != nil {
 			return nil, err

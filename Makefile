@@ -5,6 +5,9 @@ WORKDIR = $(PWD)
 GOCMD = go
 GOTEST = $(GOCMD) test
 
+build_default:
+	${GOCMD} build -o squ ./cmd/squ
+
 build_macos:
 	GOOS=darwin GOARCH=amd64 ${GOCMD} build -o squ_macos ./cmd/squ
 
