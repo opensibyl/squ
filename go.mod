@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/goccy/go-graphviz v0.1.0
 	github.com/opensibyl/sibyl-go-client v0.0.0-20230220171743-447d73d05385
-	github.com/opensibyl/sibyl2 v0.15.5-0.20230314111912-0b01bb1adc90
+	github.com/opensibyl/sibyl2 v0.15.5-0.20230314145957-f8ec60343755
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
 )
