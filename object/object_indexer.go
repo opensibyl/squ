@@ -3,8 +3,9 @@ package object
 type IndexerType = string
 
 const (
-	IndexerGolang    = "GOLANG"
-	IndexerJavaJUnit = "JUNIT"
+	IndexerGolang       = "GOLANG"
+	IndexerJavaJUnit    = "JUNIT"
+	IndexerPythonPytest = "PYTEST"
 )
 
 // key: case signature

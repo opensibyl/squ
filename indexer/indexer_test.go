@@ -16,7 +16,6 @@ import (
 
 func TestIndexerBase(t *testing.T) {
 	conf := object.DefaultConfig()
-	conf.SrcDir = "../"
 
 	ctx := context.Background()
 	sibylContext, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
@@ -34,11 +33,26 @@ func TestIndexerBase(t *testing.T) {
 	defer stop()
 	log.Log.Infof("sibyl2 backend ready")
 
-	curIndexer, err := GetIndexer(object.IndexerGolang, &conf)
+	t.Run("test_golang", func(t *testing.T) {
+		conf.SrcDir = "../"
+		curIndexer, err := GetIndexer(object.IndexerGolang, &conf)
 
-	assert.Nil(t, err)
-	err = curIndexer.UploadSrc(ctx)
-	assert.Nil(t, err)
-	err = curIndexer.TagCases(ctx)
-	assert.Nil(t, err)
+		assert.Nil(t, err)
+		err = curIndexer.UploadSrc(ctx)
+		assert.Nil(t, err)
+		err = curIndexer.TagCases(ctx)
+		assert.Nil(t, err)
+	})
+
+	t.Run("test_pytest", func(t *testing.T) {
+		t.Skip()
+		conf.SrcDir = "../"
+		curIndexer, err := GetIndexer(object.IndexerPythonPytest, &conf)
+
+		assert.Nil(t, err)
+		err = curIndexer.UploadSrc(ctx)
+		assert.Nil(t, err)
+		err = curIndexer.TagCases(ctx)
+		assert.Nil(t, err)
+	})
 }

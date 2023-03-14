@@ -50,6 +50,10 @@ func GetIndexer(indexerType object.IndexerType, config *object.SharedConfig) (In
 		return &JavaJunitIndexer{
 			baseIndexer,
 		}, nil
+	case object.IndexerPythonPytest:
+		return &PythonPytestIndexer{
+			baseIndexer,
+		}, nil
 	}
 	return nil, fmt.Errorf("no indexer named: %v", indexerType)
 }

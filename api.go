@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -60,19 +61,12 @@ runner (can be implemented by different languages)
 2. call cmd
 */
 
-func PanicIfErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func MainFlow(conf object.SharedConfig) {
 	// init config
-	absSrcDir, err := filepath.Abs(conf.SrcDir)
-	PanicIfErr(err)
-	conf.SrcDir = absSrcDir
+	fillConfig(&conf)
 	// init log
 	log.InitLogger(conf)
+	log.Log.Infof("final config we used: %v", conf)
 
 	rootContext := context.Background()
 	rootContext, cancel := context.WithCancel(rootContext)
@@ -161,6 +155,64 @@ func MainFlow(conf object.SharedConfig) {
 	fmt.Printf(cmd)
 }
 
+func fillConfig(conf *object.SharedConfig) {
+	absSrcDir, err := filepath.Abs(conf.SrcDir)
+	PanicIfErr(err)
+	conf.SrcDir = absSrcDir
+	if conf.IndexerType == "" {
+		guessedIndexType := guessIndexer(conf)
+		if guessedIndexType == "" {
+			panic(fmt.Errorf("indexer type required"))
+		}
+		conf.IndexerType = guessedIndexType
+	}
+	if conf.RunnerType == "" {
+		guessRunnerType := guessRunner(conf)
+		if guessRunnerType == "" {
+			panic(fmt.Errorf("runner type required"))
+		}
+		conf.RunnerType = guessRunnerType
+	}
+}
+
+func guessIndexer(config *object.SharedConfig) object.IndexerType {
+	files, err := filepath.Glob(path.Join(config.SrcDir, "*"))
+	if err != nil {
+		return ""
+	}
+	for _, eachFile := range files {
+		eachFileName := filepath.Base(eachFile)
+		switch eachFileName {
+		case "go.mod":
+			return object.IndexerGolang
+		case "pom.xml":
+			return object.IndexerJavaJUnit
+		case "setup.py":
+			return object.IndexerPythonPytest
+		}
+	}
+	return ""
+}
+
+func guessRunner(config *object.SharedConfig) object.RunnerType {
+	files, err := filepath.Glob(path.Join(config.SrcDir, "*"))
+	if err != nil {
+		return ""
+	}
+	for _, eachFile := range files {
+		eachFileName := filepath.Base(eachFile)
+		switch eachFileName {
+		case "go.mod":
+			return object.RunnerGolang
+		case "pom.xml":
+			return object.RunnerMaven
+		case "setup.py":
+			return object.RunnerPytest
+		}
+	}
+	return ""
+}
+
 func renderGraph(outputPath string, curIndexer indexer.Indexer, diffMap map[string][]*object.FunctionWithState) error {
 	buf := bytes.NewBuffer([]byte{})
 	baseGraph := curIndexer.GetSibylCache().CallGraph.Graph
@@ -241,4 +293,10 @@ func (g *GraphMarker) MarkGreen(n *cgraph.Node) {
 func (g *GraphMarker) MarkYellow(n *cgraph.Node) {
 	n.SetStyle("filled")
 	n.SetFillColor("greenyellow")
+}
+
+func PanicIfErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

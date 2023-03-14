@@ -23,6 +23,8 @@ func GetRunner(runnerType object.RunnerType, conf object.SharedConfig) (Runner, 
 		return NewGolangRunner(&conf)
 	case object.RunnerMaven:
 		return NewMavenRunner(&conf)
+	case object.RunnerPytest:
+		return NewPytestRunner(&conf)
 	}
 	return nil, fmt.Errorf("no runner type named: %v", runnerType)
 }
