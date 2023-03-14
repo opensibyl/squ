@@ -9,6 +9,7 @@ import (
 	openapi "github.com/opensibyl/sibyl-go-client"
 	"github.com/opensibyl/sibyl2/pkg/core"
 	"github.com/opensibyl/sibyl2/pkg/ext"
+	"github.com/opensibyl/squ/log"
 	"github.com/opensibyl/squ/object"
 )
 
@@ -52,7 +53,7 @@ func (g *GitExtractor) ExtractDiffMethods(ctx context.Context) (map[string][]*ob
 		if err != nil {
 			return nil, err
 		}
-
+		log.Log.Infof("%s %v => functions %d", eachFile, eachLineList, len(functionWithSignatures))
 		for _, eachFunc := range functionWithSignatures {
 			eachFuncWithState := &object.FunctionWithState{
 				ObjectFunctionWithSignature: eachFunc,
