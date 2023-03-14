@@ -1,9 +1,6 @@
 package squ
 
 import (
-	"fmt"
-	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/opensibyl/squ/object"
@@ -27,11 +24,4 @@ func TestMaven(t *testing.T) {
 	conf.RunnerType = object.RunnerMaven
 	conf.JsonOutput = "./output.json"
 	MainFlow(conf)
-}
-
-func TestA(t *testing.T) {
-	files, _ := filepath.Glob(path.Join("./stagesepx", "*"))
-	for _, each := range files {
-		fmt.Println(each)
-	}
 }

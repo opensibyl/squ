@@ -8,18 +8,19 @@ import (
 )
 
 type SharedConfig struct {
-	SrcDir      string      `json:"srcDir"`
-	RepoInfo    *RepoInfo   `json:"repoInfo"`
-	SibylUrl    string      `json:"sibylUrl"`
-	BatchId     int         `json:"batchId"`
-	Before      string      `json:"before"`
-	After       string      `json:"after"`
-	JsonOutput  string      `json:"jsonOutput"`
-	GraphOutput string      `json:"svgOutput"`
-	Dry         bool        `json:"dry"`
-	IndexerType IndexerType `json:"indexerType"`
-	RunnerType  RunnerType  `json:"runnerType"`
-	DebugMode   bool        `json:"debugMode"`
+	SrcDir          string      `json:"srcDir"`
+	RepoInfo        *RepoInfo   `json:"repoInfo"`
+	SibylUrl        string      `json:"sibylUrl"`
+	BatchId         int         `json:"batchId"`
+	Before          string      `json:"before"`
+	After           string      `json:"after"`
+	JsonOutput      string      `json:"jsonOutput"`
+	GraphOutput     string      `json:"svgOutput"`
+	Dry             bool        `json:"dry"`
+	IndexerType     IndexerType `json:"indexerType"`
+	RunnerType      RunnerType  `json:"runnerType"`
+	DebugMode       bool        `json:"debugMode"`
+	OverwriteConfig bool        `json:"overwriteConfig"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -33,8 +34,9 @@ func DefaultConfig() SharedConfig {
 		"",
 		"",
 		false,
-		IndexerGolang,
-		RunnerGolang,
+		"",
+		"",
+		false,
 		false,
 	}
 }
