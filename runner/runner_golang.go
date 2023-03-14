@@ -25,19 +25,13 @@ func NewGolangRunner(conf *object.SharedConfig) (Runner, error) {
 	}, nil
 }
 
-func (g *GoRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string {
-	// go test --run TestABC|TestDEF
+func (g *GoRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string {
+	// go test --run=TestABC|TestDEF
 	execCmdList := make([]string, 0, len(cases))
 	for _, each := range cases {
 		execCmdList = append(execCmdList, fmt.Sprintf("^%s$", each.GetName()))
 	}
 	caseRegex := strings.Join(execCmdList, "|")
 	finalCaseStr := fmt.Sprintf("--run=\"%s\"", caseRegex)
-
-	if g.config.CmdTemplate != "" {
-		s := fmt.Sprintf(g.config.CmdTemplate, finalCaseStr)
-		return strings.Split(s, " ")
-	}
-	// default commands
-	return []string{"go", "test", "./...", "-v", finalCaseStr}
+	return finalCaseStr
 }

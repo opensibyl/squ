@@ -14,7 +14,7 @@ type BaseRunnerPart interface {
 
 type Runner interface {
 	BaseRunnerPart
-	GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string
+	GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string
 }
 
 func GetRunner(runnerType object.RunnerType, conf object.SharedConfig) (Runner, error) {

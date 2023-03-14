@@ -1,12 +1,29 @@
 package log
 
-import "go.uber.org/zap"
+import (
+	"path/filepath"
 
-var Log = NewLogger()
+	"github.com/opensibyl/squ/object"
+	"go.uber.org/zap"
+)
 
-func NewLogger() *zap.SugaredLogger {
-	logger, _ := zap.NewProduction()
+var Log *zap.SugaredLogger
+
+func InitLogger(config object.SharedConfig) {
+	conf := zap.NewProductionConfig()
+	if config.DebugMode {
+		conf.OutputPaths = []string{
+			filepath.Join(config.SrcDir, "squ-debug.log"),
+		}
+	} else {
+		// else, quiet
+		conf.Level.SetLevel(zap.ErrorLevel)
+	}
+	logger, _ := conf.Build()
 	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
-	return sugar
+	Log = logger.Sugar()
+}
+
+func init() {
+	InitLogger(object.DefaultConfig())
 }

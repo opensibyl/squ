@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/opensibyl/squ"
-	"github.com/opensibyl/squ/log"
 	"github.com/opensibyl/squ/object"
 )
 
@@ -27,12 +26,12 @@ func main() {
 	indexerType := flag.String("indexer", object.IndexerGolang, "indexer type")
 	runnerType := flag.String("runner", object.RunnerGolang, "runner type")
 	sibylUrl := flag.String("sibylUrl", config.SibylUrl, "url of sibyl server")
+	debugMode := flag.Bool("debug", config.DebugMode, "debug mode switch")
 	flag.Parse()
 
 	// load data from config file
 	configFile := filepath.Join(*src, ConfigFile)
 	if _, err := os.Stat(configFile); err == nil {
-		log.Log.Infof("config file found")
 		data, err := os.ReadFile(configFile)
 		squ.PanicIfErr(err)
 		err = json.Unmarshal(data, &config)
@@ -48,6 +47,7 @@ func main() {
 	config.IndexerType = *indexerType
 	config.RunnerType = *runnerType
 	config.SibylUrl = *sibylUrl
+	config.DebugMode = *debugMode
 
 	bytes, err := json.MarshalIndent(config, "", "    ")
 	squ.PanicIfErr(err)

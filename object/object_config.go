@@ -19,7 +19,7 @@ type SharedConfig struct {
 	Dry         bool        `json:"dry"`
 	IndexerType IndexerType `json:"indexerType"`
 	RunnerType  RunnerType  `json:"runnerType"`
-	CmdTemplate string      `json:"cmdTemplate"`
+	DebugMode   bool        `json:"debugMode"`
 }
 
 func DefaultConfig() SharedConfig {
@@ -35,7 +35,7 @@ func DefaultConfig() SharedConfig {
 		false,
 		IndexerGolang,
 		RunnerGolang,
-		"",
+		false,
 	}
 }
 

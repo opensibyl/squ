@@ -13,7 +13,7 @@ type MavenRunner struct {
 	*BaseRunner
 }
 
-func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) []string {
+func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string {
 	// mvn test -Dtest="TheSecondUnitTest#whenTestCase2_thenPrintTest2_1"
 	parts := make([]string, 0, len(cases))
 	for _, each := range cases {
@@ -41,12 +41,7 @@ func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature
 	}
 	joined := strings.Join(parts, ",")
 	testCmd := "-Dtest=" + joined
-	if m.config.CmdTemplate != "" {
-		s := fmt.Sprintf(m.config.CmdTemplate, testCmd)
-		return strings.Split(s, " ")
-	}
-	// default commands
-	return []string{"mvn", "test", "-DfailIfNoTests=false", testCmd}
+	return testCmd
 }
 
 func NewMavenRunner(conf *object.SharedConfig) (Runner, error) {

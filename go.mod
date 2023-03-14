@@ -4,10 +4,11 @@ go 1.19
 
 require (
 	github.com/dominikbraun/graph v0.16.1
+	github.com/gin-gonic/gin v1.8.1
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/goccy/go-graphviz v0.1.0
 	github.com/opensibyl/sibyl-go-client v0.0.0-20230220171743-447d73d05385
-	github.com/opensibyl/sibyl2 v0.15.4-0.20230311084243-719b5d64f1d2
+	github.com/opensibyl/sibyl2 v0.15.5-0.20230314111912-0b01bb1adc90
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
 )
@@ -36,7 +37,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

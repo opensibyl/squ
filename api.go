@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,9 +27,11 @@ import (
 
 	"github.com/dominikbraun/graph"
 	"github.com/dominikbraun/graph/draw"
+	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
 	openapi "github.com/opensibyl/sibyl-go-client"
+	"github.com/opensibyl/sibyl2/pkg/core"
 	"github.com/opensibyl/sibyl2/pkg/server"
 	object2 "github.com/opensibyl/sibyl2/pkg/server/object"
 	"github.com/opensibyl/squ/extractor"
@@ -67,6 +71,8 @@ func MainFlow(conf object.SharedConfig) {
 	absSrcDir, err := filepath.Abs(conf.SrcDir)
 	PanicIfErr(err)
 	conf.SrcDir = absSrcDir
+	// init log
+	log.InitLogger(conf)
 
 	rootContext := context.Background()
 	rootContext, cancel := context.WithCancel(rootContext)
@@ -82,6 +88,11 @@ func MainFlow(conf object.SharedConfig) {
 		go func() {
 			config := object2.DefaultExecuteConfig()
 			// for performance
+			// disable stdout
+			gin.SetMode(gin.ReleaseMode)
+			gin.DefaultWriter = io.Discard
+			core.Log = log.Log
+			//
 			config.BindingConfigPart.DbType = object2.DriverTypeInMemory
 			config.EnableLog = false
 			config.Port = portNum
@@ -146,10 +157,8 @@ func MainFlow(conf object.SharedConfig) {
 	log.Log.Infof("prepare stage finished, total cost: %d ms", prepareTotalCost.Milliseconds())
 	cmd := curRunner.GetRunCommand(casesToRun)
 	log.Log.Infof("runner cmd: %v", cmd)
-	if !conf.Dry {
-		log.Log.Infof("start running cases: %v", len(casesToRun))
-		_ = curRunner.Run(cmd, rootContext)
-	}
+	// to stdout
+	fmt.Printf(cmd)
 }
 
 func renderGraph(outputPath string, curIndexer indexer.Indexer, diffMap map[string][]*object.FunctionWithState) error {
