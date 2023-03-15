@@ -24,12 +24,20 @@ jobs:
         run: |
           go test -v ./...
       - name: Build
-        run: |
-          make
+        uses: crazy-max/ghaction-xgo@v2
+        with:
+          xgo_version: latest
+          go_version: 1.19
+          pkg: cmd/squ
+          dest: build
+          prefix: squ
+          targets: windows/amd64,linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+          v: true
+          x: false
+          ldflags: -s -w
+          buildmode: default
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            cgp_linux.zip
-            cgp_windows.zip
-            cgp_macos.zip
+            **/squ_*
