@@ -14,6 +14,10 @@ type GoRunner struct {
 
 func (g *GoRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string {
 	// go test --run=TestABC|TestDEF
+	if len(cases) == 0 {
+		return "--run=\"^$\""
+	}
+
 	execCmdList := make([]string, 0, len(cases))
 	for _, each := range cases {
 		execCmdList = append(execCmdList, fmt.Sprintf("^%s$", each.GetName()))

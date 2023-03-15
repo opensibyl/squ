@@ -15,6 +15,10 @@ type MavenRunner struct {
 
 func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string {
 	// mvn test -Dtest="TheSecondUnitTest#whenTestCase2_thenPrintTest2_1"
+	if len(cases) == 0 {
+		return "-DskipTests"
+	}
+
 	parts := make([]string, 0, len(cases))
 	for _, each := range cases {
 		extras := each.GetExtras()

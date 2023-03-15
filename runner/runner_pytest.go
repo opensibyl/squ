@@ -14,6 +14,10 @@ type PytestRunner struct {
 
 func (p *PytestRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature) string {
 	// py.test tests_directory/foo.py tests_directory/bar.py -k 'test_001 or test_some_other_test'
+	if len(cases) == 0 {
+		return "--ignore-glob=\"*\""
+	}
+
 	execCmdList := make([]string, 0, len(cases))
 	for _, each := range cases {
 		execCmdList = append(execCmdList, fmt.Sprintf("%s", each.GetName()))

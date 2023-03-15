@@ -137,7 +137,6 @@ func MainFlow(conf object.SharedConfig) {
 	log.Log.Infof("runner scope")
 	if len(casesToRun) == 0 {
 		log.Log.Infof("no cases need to run")
-		return
 	}
 	curRunner, err := runner.GetRunner(conf.RunnerType, conf)
 	PanicIfErr(err)
