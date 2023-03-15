@@ -25,11 +25,9 @@ jobs:
           go test -v ./...
       - name: Build
         run: |
-          make
+          make release
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            cgp_linux.zip
-            cgp_windows.zip
-            cgp_macos.zip
+            squ_*
