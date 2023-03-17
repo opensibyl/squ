@@ -22,7 +22,7 @@ func (p *PytestRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignatur
 	for _, each := range cases {
 		execCmdList = append(execCmdList, fmt.Sprintf("%s", each.GetName()))
 	}
-	caseRegex := strings.Join(execCmdList, " ")
+	caseRegex := strings.Join(execCmdList, " and ")
 	finalCaseStr := fmt.Sprintf("-k=\"%s\"", caseRegex)
 	return finalCaseStr
 }
