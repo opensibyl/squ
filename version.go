@@ -1,3 +1,3 @@
 package squ
 
-const version = "v0.1.9"
+const version = "v0.1.10"
