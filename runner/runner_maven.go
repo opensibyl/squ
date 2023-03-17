@@ -44,7 +44,7 @@ func (m *MavenRunner) GetRunCommand(cases []*openapi.ObjectFunctionWithSignature
 		parts = append(parts, curPartStr)
 	}
 	joined := strings.Join(parts, ",")
-	testCmd := "-Dtest=" + joined
+	testCmd := fmt.Sprintf("-Dtest=%s -DfailIfNoTests=false", joined)
 	return testCmd
 }
 
