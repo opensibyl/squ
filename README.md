@@ -1,10 +1,10 @@
 # squ (eezer)
 
-One step to scale down your test cases based on your diff. For multiple languages.
+One step to speed up testing cycle based on code diff. For multiple languages.
 
 ## Before vs After
 
-Before: I have to run all the cases for even a tiny change. Which takes 40 mins.
+Before: I have to run all the cases for even a tiny change, which takes 40 minutes. Which means 0.32 USD per push.
 
 <img width="694" alt="image" src="https://user-images.githubusercontent.com/13421694/226383324-80c878de-815b-4a80-8666-772dc44fedf0.png">
 
@@ -59,6 +59,8 @@ Much benefits:
 | [stagesepx (our own case)](https://github.com/williamfzc/stagesepx) | Python   | ~1 s         | 45     | 0~15  | ~75%     |
 | [Jacoco](https://github.com/jacoco/jacoco)                          | Java     | ~7 s         | 1364   | 0~983 | ~50%     |
 | [sibyl2](https://github.com/opensibyl/sibyl2)                       | Golang   | ~1 s         | 53     | 0~20  | ~70%     |
+
+Also, you can see [our pipeline example](https://github.com/williamfzc/stagesepx/blob/c4ea7b0fde09ff66e106e10f81ff98e0b6a98217/.github/workflows/smoketest.yml#L42) if you want to make it work with github action.
 
 ## How it works?
 
